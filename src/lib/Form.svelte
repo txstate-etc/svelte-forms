@@ -5,13 +5,15 @@
 
   export let submit: (state: any) => Promise<SubmitResponse<any>> = undefined
   export let validate: (state: any) => Promise<Feedback[]> = undefined
+  export let success: () => void|Promise<void> = undefined
   export let store = new FormStore(submit, validate)
   setContext(FORM_CONTEXT, store)
   const globalMessages = derivedStore(store, 'globalMessages')
   const saved = derivedStore(store, 'saved')
 
   async function onSubmit () {
-    await store.submit()
+    const resp = await store.submit()
+    if (resp.success) await success?.()
   }
 
   let form
