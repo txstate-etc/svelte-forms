@@ -23,7 +23,9 @@
 
 <SubForm {path}>
   {#each $arr as value,index}
-    <slot {path} {index} {value} />
+    <SubForm path={String(index)}>
+      <slot {path} {index} {value} />
+    </SubForm>
   {/each}
   <slot name="addmore" {onClick} {addMoreText}>
     <button type="button" class={addMoreClass} on:click={onClick}>{addMoreText}</button>

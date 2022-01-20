@@ -5,10 +5,9 @@
   import type { FormStore } from './FormStore'
 
   export let path: string
-  export let index: number|undefined = undefined
   export let defaultValue: any = ''
-  const inheritedPath = getContext<FormStore>(FORM_INHERITED_PATH)
-  const finalPath = [inheritedPath, index, path].filter(isNotNull).join('.')
+  const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
+  const finalPath = [inheritedPath, path].filter(isNotNull).join('.')
 
   const store = getContext<FormStore>(FORM_CONTEXT)
   store.registerField(finalPath)

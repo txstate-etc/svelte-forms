@@ -29,8 +29,8 @@
     <input type="text" name={path} value={value} on:change={onChange}>
   </Field>
   <fieldset>
-    <AddMore path="multi" initialState={{ name: 'Barney' }} let:index>
-      <Field path="name" {index} let:path let:value let:onChange let:onBlur let:messages>
+    <AddMore path="multi" initialState={{ name: 'Barney' }}>
+      <Field path="name" let:path let:value let:onChange let:onBlur let:messages>
         <input type="text" name={path} {value} on:change={onChange} on:keyup={onChange} on:blur={onBlur}><br>
         {#each messages as msg}
           <div style='background-color: pink'>{msg.message}</div>
