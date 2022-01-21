@@ -13,6 +13,8 @@ export interface SubmitResponse<StateType> {
   messages: Feedback[]
 }
 
+type ValidState = 'valid'|'invalid'|undefined
+
 interface IFormStore<StateType> {
   data: Partial<StateType>
   messages: {
@@ -20,16 +22,23 @@ interface IFormStore<StateType> {
     global: Feedback[]
     fields: Record<string, Feedback[]>
   }
+  validField: Record<string, ValidState>
+  valid: boolean
+  invalid: boolean
   validating: boolean
+  submitting: boolean
   saved: boolean
 }
 
-const initialState = { data: {}, messages: { all: [], global: [], fields: {} }, validating: false, saved: false, dirty: undefined }
+const errorTypes = { error: true, system: true }
+
+const initialState = { data: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, validating: false, submitting: false, saved: false, dirty: undefined }
 export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   validationTimer?: NodeJS.Timeout
   validateVersion: number
   fields: Map<string, number>
   dirtyIndex: number = -1
+  submitPromise?: Promise<SubmitResponse<StateType>>
 
   constructor (
     private submitFn: (data: Partial<StateType>) => Promise<SubmitResponse<StateType>>,
@@ -84,6 +93,10 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     return derivedStore(this, state => (state.messages.fields[path] ?? []))
   }
 
+  getFieldValid (path: string) {
+    return derivedStore(this, state => state.validField[path])
+  }
+
   registerField (path: string) {
     this.fields.set(path, this.fields.size)
   }
@@ -108,7 +121,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   private triggerValidation () {
-    this.update(v => ({ ...v, saved: false }))
+    this.update(v => ({ ...v, saved: false, validating: true }))
     clearTimeout(this.validationTimer)
     this.validationTimer = setTimeout(() => {
       this.validate().catch(console.error)
@@ -121,25 +134,52 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     const newMessages = (await this.validateFn?.(this.value.data)) ?? []
     if (this.validateVersion === saveVersion) {
       this.setErrors(newMessages)
+      this.update(v => ({ ...v, validating: false }))
     }
   }
 
   async submit () {
-    const resp = await this.submitFn(this.value.data)
-    this.update(v => ({ ...v, data: resp.data, saved: resp.success }))
-    this.setErrors(resp.messages)
-    return resp
+    this.submitPromise ??= this.submitFn(this.value.data)
+    try {
+      this.update(v => ({ ...v, submitting: true }))
+      const resp = await this.submitPromise
+      this.update(v => ({ ...v, data: resp.data, saved: resp.success }))
+      this.setErrors(resp.messages)
+      return resp
+    } catch (e) {
+      const messages: Feedback[] = [{
+        type: 'system',
+        message: e.message
+      }]
+      this.setErrors(messages)
+      return {
+        success: false,
+        data: this.value.data,
+        messages
+      }
+    } finally {
+      this.submitPromise = undefined
+      this.update(v => ({ ...v, submitting: false }))
+    }
   }
 
   private setErrors (newMessages: Feedback[]) {
     this.update(v => {
+      const invalid = newMessages.some(m => errorTypes[m.type])
+      const validField: Record<string, ValidState> = Array.from(this.fields.keys()).reduce((validField, path) => ({ ...validField, [path]: 'valid' }), {})
+      for (const m of newMessages) {
+        if (m.path && errorTypes[m.type]) validField[m.path] = 'invalid'
+      }
       return {
         ...v,
         messages: {
           all: newMessages,
           fields: newMessages.filter(m => m.path).reduce((acc, curr) => ({ ...acc, [curr.path]: this.fields.get(curr.path) <= this.dirtyIndex ? [...(acc[curr.path] ?? []), curr] : [] }), {}),
           global: newMessages.filter(m => !m.path)
-        }
+        },
+        validField,
+        invalid,
+        valid: !invalid
       }
     })
   }

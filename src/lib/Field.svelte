@@ -18,6 +18,8 @@
       path: string
       value: T
       messages: Feedback[]
+      valid: boolean
+      invalid: boolean
       setVal: (val: T) => void
       onChange: () => void
       onBlur: () => void
@@ -26,6 +28,10 @@
   const val = store.getField<T>(finalPath)
   const messages = store.getFeedback(finalPath)
   $: resolvedVal = $val ?? defaultValue
+
+  const fieldValid = store.getFieldValid(finalPath)
+  $: invalid = $fieldValid === 'invalid'
+  $: valid = $fieldValid === 'valid'
 
   function setVal (val: T) {
     store.setField(finalPath, val)
@@ -41,4 +47,4 @@
 </script>
 
 {@html '<!-- svelte-forms(' + finalPath + ') -->'}
-<slot path={finalPath} value={resolvedVal} messages={$messages} {setVal} {onChange} {onBlur} />
+<slot path={finalPath} value={resolvedVal} messages={$messages} {valid} {invalid} {setVal} {onChange} {onBlur} />

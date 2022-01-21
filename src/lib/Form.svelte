@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount, setContext } from 'svelte'
-  import { derivedStore } from '@txstate-mws/svelte-store'
   import { Feedback, FormStore, FORM_CONTEXT, SubmitResponse } from '$lib/FormStore'
 
   export let submit: (state: any) => Promise<SubmitResponse<any>> = undefined
@@ -8,8 +7,6 @@
   export let success: () => void|Promise<void> = undefined
   export let store = new FormStore(submit, validate)
   setContext(FORM_CONTEXT, store)
-  const globalMessages = derivedStore(store, 'globalMessages')
-  const saved = derivedStore(store, 'saved')
 
   async function onSubmit () {
     const resp = await store.submit()
@@ -30,5 +27,5 @@
 </script>
 
 <form bind:this={form} on:submit|preventDefault={onSubmit}>
-  <slot messages={$globalMessages} saved={$saved} />
+  <slot messages={$store.messages.global} saved={$store.saved} validating={$store.validating} submitting={$store.submitting} valid={$store.valid} invalid={$store.invalid} />
 </form>
