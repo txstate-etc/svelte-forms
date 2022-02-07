@@ -1,8 +1,15 @@
 import { derivedStore, Store, subStore } from '@txstate-mws/svelte-store'
 import { get, set } from 'txstate-utils'
 
+export enum MessageType {
+  ERROR = 'error',
+  WARNING = 'warning',
+  SUCCESS = 'success',
+  SYSTEM = 'system'
+}
+
 export interface Feedback {
-  type: 'error'|'warning'|'success'|'system'
+  type: `${MessageType}`
   path?: string
   message: string
 }
@@ -28,11 +35,12 @@ interface IFormStore<StateType> {
   validating: boolean
   submitting: boolean
   saved: boolean
+  width: number
 }
 
-const errorTypes = { error: true, system: true }
+const errorTypes = { [MessageType.ERROR]: true, [MessageType.SYSTEM]: true }
 
-const initialState = { data: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, validating: false, submitting: false, saved: false, dirty: undefined }
+const initialState = { data: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, validating: false, submitting: false, saved: false, dirty: undefined, width: 800 }
 export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   validationTimer?: NodeJS.Timeout
   validateVersion: number
@@ -131,7 +139,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   private async validate () {
     if (this.dirtyIndex === -1) return
     const saveVersion = ++this.validateVersion
-    const newMessages = (await this.validateFn?.(this.value.data)) ?? []
+    const newMessages = await this.validateFn?.(this.value.data)
     if (this.validateVersion === saveVersion) {
       this.setErrors(newMessages)
       this.update(v => ({ ...v, validating: false }))
@@ -148,7 +156,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       return resp
     } catch (e) {
       const messages: Feedback[] = [{
-        type: 'system',
+        type: MessageType.SYSTEM,
         message: e.message
       }]
       this.setErrors(messages)
