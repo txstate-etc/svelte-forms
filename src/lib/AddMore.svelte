@@ -9,6 +9,8 @@
   export let startEmpty: boolean = false
   export let addMoreText: string = '+ Add'
   export let addMoreClass: string = ''
+  export let maxedText = addMoreText
+  export let maxLength = Infinity
 
   const store = getContext<FormStore>(FORM_CONTEXT)
   const arr = store.getField<any[]>(path)
@@ -19,15 +21,16 @@
   function onClick () {
     store.push(path, initialState)
   }
+  $: maxed = $arr?.length >= maxLength
 </script>
 
 <SubForm {path}>
   {#each $arr as value,index}
     <SubForm path={String(index)}>
-      <slot {path} {index} {value} />
+      <slot {path} {index} {value} {maxed} {maxLength} />
     </SubForm>
   {/each}
-  <slot name="addmore" {onClick} {addMoreText}>
-    <button type="button" class={addMoreClass} on:click={onClick}>{addMoreText}</button>
+  <slot name="addbutton" {onClick} {addMoreText} {maxed} {maxLength}>
+    <button type="button" class={addMoreClass} disabled={maxed} on:click={onClick}>{maxed ? maxedText : addMoreText}</button>
   </slot>
 </SubForm>

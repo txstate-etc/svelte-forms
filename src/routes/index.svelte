@@ -1,9 +1,6 @@
 <script lang="ts">
-  import Form from '$lib/Form.svelte'
-  import Field from '$lib/Field.svelte'
-  import AddMore from '$lib/AddMore.svelte'
-  import type { Feedback } from '$lib/FormStore'
   import { sleep } from 'txstate-utils'
+  import { AddMore, Field, Form, MessageType } from '$lib'
 
   async function submit (data) {
     await sleep(3000)
@@ -14,10 +11,10 @@
     }
   }
 
-  async function validate (data): Promise<Feedback[]> {
+  async function validate (data) {
     await sleep(500)
     return [{
-      type: 'error',
+      type: MessageType.ERROR,
       message: 'Nope',
       path: 'multi.0.name'
     }]
@@ -32,7 +29,7 @@
     <input type="text" name={path} value={value} on:change={onChange}>
   </Field>
   <fieldset>
-    <AddMore path="multi" initialState={{ name: 'Barney' }}>
+    <AddMore path="multi" initialState={{ name: 'Barney' }} maxLength={3}>
       <Field path="name" let:path let:value let:onChange let:onBlur let:messages let:invalid>
         <input type="text" name={path} {value} class:invalid on:change={onChange} on:keyup={onChange} on:blur={onBlur}><br>
         {#each messages as msg}
