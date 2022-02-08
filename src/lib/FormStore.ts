@@ -57,6 +57,20 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.fields = new Map()
   }
 
+  set (state: IFormStore<StateType>) {
+    const invalid = state.messages.all.some(m => errorTypes[m.type])
+    const validField: Record<string, ValidState> = Array.from(this.fields.keys()).reduce((validField, path) => ({ ...validField, [path]: 'valid' }), {})
+    for (const m of state.messages.all) {
+      if (m.path && errorTypes[m.type]) validField[m.path] = 'invalid'
+    }
+    state.messages.fields = state.messages.all.filter(m => m.path).reduce((acc, curr) => ({ ...acc, [curr.path]: this.fields.get(curr.path) <= this.dirtyIndex ? [...(acc[curr.path] ?? []), curr] : [] }), {})
+    state.messages.global = state.messages.all.filter(m => !m.path)
+    state.validField = validField
+    state.invalid = invalid
+    state.valid = !invalid
+    super.set(state)
+  }
+
   reset (data?: StateType) {
     this.dirtyIndex = -1
     this.set({ ...initialState, data: data ?? {} })
@@ -105,7 +119,13 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     return derivedStore(this, state => state.validField[path])
   }
 
-  registerField (path: string) {
+  registerField (path: string, initialValue: any) {
+    if (typeof initialValue !== 'undefined') {
+      this.update(v => {
+        if (typeof get(v.data, path) === 'undefined') return { ...v, data: set(v.data, path, initialValue) }
+        return v
+      })
+    }
     this.fields.set(path, this.fields.size)
   }
 
@@ -141,8 +161,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     const saveVersion = ++this.validateVersion
     const newMessages = await this.validateFn?.(this.value.data)
     if (this.validateVersion === saveVersion) {
-      this.setErrors(newMessages)
-      this.update(v => ({ ...v, validating: false }))
+      this.update(v => ({ ...v, validating: false, messages: { ...v.messages, all: newMessages } }))
     }
   }
 
@@ -151,15 +170,14 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     try {
       this.update(v => ({ ...v, submitting: true }))
       const resp = await this.submitPromise
-      this.update(v => ({ ...v, data: resp.data, saved: resp.success }))
-      this.setErrors(resp.messages)
+      this.update(v => ({ ...v, data: resp.data, saved: resp.success, messages: { ...v.messages, all: resp.messages } }))
       return resp
     } catch (e) {
       const messages: Feedback[] = [{
         type: MessageType.SYSTEM,
         message: e.message
       }]
-      this.setErrors(messages)
+      this.update(v => ({ ...v, messages: { ...v.messages, all: messages } }))
       return {
         success: false,
         data: this.value.data,
@@ -169,27 +187,6 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       this.submitPromise = undefined
       this.update(v => ({ ...v, submitting: false }))
     }
-  }
-
-  private setErrors (newMessages: Feedback[]) {
-    this.update(v => {
-      const invalid = newMessages.some(m => errorTypes[m.type])
-      const validField: Record<string, ValidState> = Array.from(this.fields.keys()).reduce((validField, path) => ({ ...validField, [path]: 'valid' }), {})
-      for (const m of newMessages) {
-        if (m.path && errorTypes[m.type]) validField[m.path] = 'invalid'
-      }
-      return {
-        ...v,
-        messages: {
-          all: newMessages,
-          fields: newMessages.filter(m => m.path).reduce((acc, curr) => ({ ...acc, [curr.path]: this.fields.get(curr.path) <= this.dirtyIndex ? [...(acc[curr.path] ?? []), curr] : [] }), {}),
-          global: newMessages.filter(m => !m.path)
-        },
-        validField,
-        invalid,
-        valid: !invalid
-      }
-    })
   }
 }
 

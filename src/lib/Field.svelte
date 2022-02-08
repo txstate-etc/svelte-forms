@@ -5,14 +5,16 @@
   import type { FormStore } from './FormStore'
 
   export let path: string
-  export let defaultValue: any = ''
+  export let defaultValue: any = undefined
+  export let serialize: ((value: any) => string)|undefined = undefined
+  export let deserialize: ((value: string) => any)|undefined = undefined
   const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
   const finalPath = [inheritedPath, path].filter(isNotNull).join('.')
 
   const store = getContext<FormStore>(FORM_CONTEXT)
-  store.registerField(finalPath)
+  store.registerField(finalPath, defaultValue)
 
-  type T = $$Generic
+  type T = any
   interface $$Slots {
     default: {
       path: string
@@ -27,7 +29,7 @@
   }
   const val = store.getField<T>(finalPath)
   const messages = store.getFeedback(finalPath)
-  $: resolvedVal = $val ?? defaultValue
+  $: resolvedVal = serialize ? serialize($val) : $val
 
   const fieldValid = store.getFieldValid(finalPath)
   $: invalid = $fieldValid === 'invalid'
@@ -38,7 +40,14 @@
   }
 
   function onChange () {
-    setVal(this.value)
+    const val = deserialize ? deserialize(this.value) : this.value
+    setVal(val)
+    const serialized = serialize ? serialize(val) : val
+    // the serialize/deserialize process can convert multiple distinct input values into undefined in the store
+    // this means that if the user goes from one "undefined" state to another, the store state will not change,
+    // as it's just undefined -> undefined. So the input's value is not reactively overwritten to the cleaned up value.
+    // we need this line here so that the input value stays in sync with the store
+    if (this.value !== serialized) this.value = serialized
   }
 
   function onBlur () {

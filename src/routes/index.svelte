@@ -1,6 +1,6 @@
 <script lang="ts">
   import { sleep } from 'txstate-utils'
-  import { AddMore, Field, Form, MessageType } from '$lib'
+  import { AddMore, Field, Form, FormStore, MessageType, nullableSerialize, nullableDeserialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from '$lib'
 
   async function submit (data) {
     await sleep(3000)
@@ -19,13 +19,15 @@
       path: 'multi.0.name'
     }]
   }
+
+  let store: FormStore
 </script>
 
 <h1>Svelte Forms</h1>
 
-<Form {submit} {validate} let:saved let:submitting let:invalid>
-  This is an example form.
-  <Field path="test" let:path let:value let:onChange>
+<Form bind:store {submit} {validate} let:saved let:submitting let:invalid>
+  This is an example form.<br>
+  <Field path="test" defaultValue='Sara' serialize={nullableSerialize} deserialize={nullableDeserialize} let:path let:value let:onChange>
     <input type="text" name={path} value={value} on:change={onChange}>
   </Field>
   <fieldset>
@@ -38,6 +40,35 @@
       </Field>
     </AddMore>
   </fieldset>
+  <br>
+  <Field path="mydate" let:path let:value let:onChange serialize={dateSerialize} deserialize={dateDeserialize}>
+    <label for="mydate">Date with no time: </label>
+    <input id="mydate" type="date" name={path} {value} on:change={onChange} on:keyup={onChange}>
+    <div>Should place a Date object into store, noon on the specified date in the browser's time zone.</div>
+  </Field>
+  <br>
+  <Field path="mydatetime" let:path let:value let:onChange serialize={datetimeSerialize} deserialize={datetimeDeserialize}>
+    <label for="mydatetime">Date with time: </label>
+    <input id="mydatetime" type="datetime-local" name={path} {value} on:change={onChange} on:keyup={onChange}>
+    <div>Should place a Date object into store, only when completely filled out.</div>
+  </Field>
+  <br>
+  <Field path="number" let:path let:value let:onChange serialize={numberSerialize} deserialize={numberDeserialize}>
+    <label for="number">Non-Nullable Number: </label>
+    <input id="number" type="text" name={path} {value} on:change={onChange} on:keyup={onChange}>
+    <div>Any invalid input should be converted to 0.</div>
+  </Field>
+  <br>
+  <Field path="numbernull" let:path let:value let:onChange serialize={numberSerialize} deserialize={numberNullableDeserialize}>
+    <label for="numbernull">Nullable Number: </label>
+    <input id="numbernull" type="text" name={path} {value} on:change={onChange} on:keyup={onChange}>
+    <div>When left empty this field in the store will be undefined.</div>
+  </Field>
   {#if saved}Save successful!{/if}
+  <br>
   <button disabled={submitting || invalid}>Submit</button>
 </Form>
+
+<style>
+  .invalid { border: 1px solid red; }
+</style>
