@@ -9,6 +9,8 @@
   export let submit: (state: any) => Promise<SubmitResponse<any>> = undefined
   export let validate: (state: any) => Promise<Feedback[]> = undefined
   export let success: () => void|Promise<void> = undefined
+  export let autocomplete: string|undefined = undefined
+  export let name: string|undefined = undefined
   export let store = new FormStore(submit, validate)
   setContext(FORM_CONTEXT, store)
 
@@ -39,6 +41,6 @@
   })
 </script>
 
-<form bind:this={form} class={className} on:submit|preventDefault={onSubmit} use:resize on:resize={onResize} data-eq={dataeq}>
+<form bind:this={form} {name} class={className} on:submit|preventDefault={onSubmit} use:resize on:resize={onResize} data-eq={dataeq} {autocomplete}>
   <slot messages={$store.messages.global} saved={$store.saved} validating={$store.validating} submitting={$store.submitting} valid={$store.valid} invalid={$store.invalid} />
 </form>
