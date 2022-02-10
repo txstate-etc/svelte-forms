@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getContext, setContext } from 'svelte'
-  import { isNotNull } from 'txstate-utils'
+  import { isNotBlank } from 'txstate-utils'
   import { FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { FormStore } from './FormStore'
 
@@ -8,7 +8,7 @@
   export let conditional: boolean|undefined = undefined
 
   const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
-  const finalPath = [inheritedPath, path].filter(isNotNull).join('.')
+  const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
 
   const store = getContext<FormStore>(FORM_CONTEXT)
   const obj = store.getField(path)

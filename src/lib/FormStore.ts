@@ -46,6 +46,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   validateVersion: number
   fields: Map<string, number>
   dirtyFields: Map<string, boolean>
+  dirtyForm: boolean
   submitPromise?: Promise<SubmitResponse<StateType>>
 
   constructor (
@@ -55,6 +56,8 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     super(initialState)
     this.validateVersion = 0
     this.fields = new Map()
+    this.dirtyFields = new Map()
+    this.dirtyForm = false
   }
 
   set (state: IFormStore<StateType>) {
@@ -63,7 +66,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     for (const m of state.messages.all) {
       if (m.path && errorTypes[m.type]) validField[m.path] = 'invalid'
     }
-    state.messages.fields = state.messages.all.filter(m => m.path).reduce((acc, curr) => ({ ...acc, [curr.path]: this.dirtyFields.get(curr.path) ? [...(acc[curr.path] ?? []), curr] : [] }), {})
+    state.messages.fields = state.messages.all.filter(m => m.path).reduce((acc, curr) => ({ ...acc, [curr.path]: (this.dirtyForm || this.dirtyFields.get(curr.path)) ? [...(acc[curr.path] ?? []), curr] : [] }), {})
     state.messages.global = state.messages.all.filter(m => !m.path)
     state.validField = validField
     state.invalid = invalid
@@ -72,11 +75,13 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   reset (data?: StateType) {
+    this.dirtyForm = false
     this.dirtyFields = new Map()
     this.set({ ...initialState, data: data ?? {} })
   }
 
   setData (data: StateType) {
+    this.dirtyForm = true
     this.update(v => ({ ...v, data }))
     this.triggerValidation()
   }
@@ -104,6 +109,14 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.triggerValidation()
   }
 
+  deleteFromArray (path: string, idx: number) {
+    this.update(v => {
+      const arr = get(v.data, path)
+      return { ...v, data: set(v.data, path, arr.splice(idx, 1)) }
+    })
+    this.triggerValidation()
+  }
+
   /**
    * Returns a store representing the field's value
    */
@@ -116,7 +129,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   getFieldValid (path: string) {
-    return derivedStore(this, state => this.dirtyFields[path] && get(state.data, path) ? state.validField[path] : undefined)
+    return derivedStore(this, state => (this.dirtyFields.get(path) || this.dirtyForm) ? state.validField[path] : undefined)
   }
 
   registerField (path: string, initialValue: any) {
@@ -179,6 +192,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     try {
       this.update(v => ({ ...v, submitting: true }))
       const resp = await this.submitPromise
+      this.dirtyForm = true
       this.update(v => ({ ...v, data: resp.data, saved: resp.success, messages: { ...v.messages, all: resp.messages } }))
       return resp
     } catch (e) {
