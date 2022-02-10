@@ -11,6 +11,7 @@
   export let addMoreClass: string = ''
   export let maxedText = addMoreText
   export let maxLength = Infinity
+  export let conditional: boolean|undefined = undefined
 
   const store = getContext<FormStore>(FORM_CONTEXT)
   const arr = store.getField<any[]>(path)
@@ -24,7 +25,7 @@
   $: maxed = $arr?.length >= maxLength
 </script>
 
-<SubForm {path}>
+<SubForm {path} {conditional}>
   {#each $arr as value,index}
     <SubForm path={String(index)}>
       <slot {path} {index} {value} {maxed} {maxLength} />

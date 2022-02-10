@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getContext } from 'svelte'
+  import { getContext, onDestroy } from 'svelte'
   import { isNotNull } from 'txstate-utils'
   import { Feedback, FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { FormStore } from './FormStore'
@@ -8,6 +8,7 @@
   export let defaultValue: any = undefined
   export let serialize: ((value: any) => string)|undefined = undefined
   export let deserialize: ((value: string) => any)|undefined = undefined
+  export let conditional: boolean|undefined = undefined
   const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
   const finalPath = [inheritedPath, path].filter(isNotNull).join('.')
 
@@ -23,7 +24,7 @@
       valid: boolean
       invalid: boolean
       setVal: (val: T) => void
-      onChange: () => void
+      onChange: (e?: any) => void
       onBlur: () => void
     }
   }
@@ -39,8 +40,9 @@
     store.setField(finalPath, val)
   }
 
-  function onChange () {
-    const val = deserialize ? deserialize(this.value) : this.value
+  function onChange (e: any) {
+    const resolvedVal = this.value ?? e.detail
+    const val = deserialize ? deserialize(resolvedVal) : resolvedVal
     setVal(val)
     const serialized = serialize ? serialize(val) : val
     // the serialize/deserialize process can convert multiple distinct input values into undefined in the store
@@ -53,7 +55,15 @@
   function onBlur () {
     store.dirtyField(finalPath)
   }
+
+  onDestroy(() => {
+    store.unregisterField(finalPath)
+  })
+
+  $: if (conditional === false) store.setField(finalPath, undefined)
 </script>
 
 {@html '<!-- svelte-forms(' + finalPath + ') -->'}
-<slot path={finalPath} value={resolvedVal} messages={$messages} {valid} {invalid} {setVal} {onChange} {onBlur} />
+{#if conditional !== false}
+  <slot path={finalPath} value={resolvedVal} messages={$messages} {valid} {invalid} {setVal} {onChange} {onBlur} />
+{/if}

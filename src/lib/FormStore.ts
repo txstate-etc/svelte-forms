@@ -45,7 +45,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   validationTimer?: NodeJS.Timeout
   validateVersion: number
   fields: Map<string, number>
-  dirtyIndex: number = -1
+  dirtyFields: Map<string, boolean>
   submitPromise?: Promise<SubmitResponse<StateType>>
 
   constructor (
@@ -63,7 +63,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     for (const m of state.messages.all) {
       if (m.path && errorTypes[m.type]) validField[m.path] = 'invalid'
     }
-    state.messages.fields = state.messages.all.filter(m => m.path).reduce((acc, curr) => ({ ...acc, [curr.path]: this.fields.get(curr.path) <= this.dirtyIndex ? [...(acc[curr.path] ?? []), curr] : [] }), {})
+    state.messages.fields = state.messages.all.filter(m => m.path).reduce((acc, curr) => ({ ...acc, [curr.path]: this.dirtyFields.get(curr.path) ? [...(acc[curr.path] ?? []), curr] : [] }), {})
     state.messages.global = state.messages.all.filter(m => !m.path)
     state.validField = validField
     state.invalid = invalid
@@ -72,7 +72,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   reset (data?: StateType) {
-    this.dirtyIndex = -1
+    this.dirtyFields = new Map()
     this.set({ ...initialState, data: data ?? {} })
   }
 
@@ -90,8 +90,8 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   dirtyField (path: string) {
     if (this.fields.has(path)) {
       const dirtyIndex = this.fields.get(path)
-      if (dirtyIndex > this.dirtyIndex) {
-        this.dirtyIndex = dirtyIndex
+      for (const [key, idx] of this.fields) {
+        if (idx <= dirtyIndex) this.dirtyFields.set(key, true)
       }
     }
   }
@@ -116,7 +116,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   getFieldValid (path: string) {
-    return derivedStore(this, state => state.validField[path])
+    return derivedStore(this, state => this.dirtyFields[path] && get(state.data, path) ? state.validField[path] : undefined)
   }
 
   registerField (path: string, initialValue: any) {
@@ -129,22 +129,32 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.fields.set(path, this.fields.size)
   }
 
+  unregisterField (path: string) {
+    const deletedidx = this.fields.get(path)
+    this.fields.delete(path)
+    for (const [key, idx] of this.fields) {
+      if (idx > deletedidx) this.fields.set(key, idx - 1)
+    }
+  }
+
   reorderFields (form: HTMLFormElement) {
     const nodeIterator = document.createNodeIterator(
       form,
       NodeFilter.SHOW_COMMENT
     )
-    let i = 0
+    this.fields = new Map()
     while (nodeIterator.nextNode()) {
       const comment = nodeIterator.referenceNode.nodeValue
       const m = comment.match(/svelte-forms\((.*?)\)/i)
       if (m?.[1]) {
         const path = m[1]
-        // if we see a new input before we reach the dirty input, we have to increment
-        // dirtyIndex so that it continues to point at the dirty input
-        if (!this.fields.has(path) && i < this.dirtyIndex) this.dirtyIndex++
-        this.fields.set(path, i++)
+        this.fields.set(path, this.fields.size)
       }
+    }
+    let dirtyStarted = false
+    for (const [key] of Array.from(this.fields).reverse()) {
+      if (this.dirtyFields.get(key)) dirtyStarted = true
+      if (dirtyStarted) this.dirtyFields.set(key, true)
     }
   }
 
@@ -157,7 +167,6 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   private async validate () {
-    if (this.dirtyIndex === -1) return
     const saveVersion = ++this.validateVersion
     const newMessages = await this.validateFn?.(this.value.data)
     if (this.validateVersion === saveVersion) {
