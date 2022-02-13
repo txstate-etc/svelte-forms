@@ -1,4 +1,11 @@
-export function dateSerialize (dt: Date) {
+import { dateToISOWithTZ } from 'txstate-utils'
+
+function dtToJSON () {
+  return dateToISOWithTZ(this)
+}
+
+export function dateSerialize (dt: Date|string) {
+  if (typeof dt === 'string' && dt) dt = new Date(dt)
   return dt instanceof Date ? `${String(dt.getFullYear()).padStart(4, '0')}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}` : ''
 }
 
@@ -7,10 +14,12 @@ export function dateDeserialize (v: string) {
   const [year, month, day] = v.split('-').map(Number)
   const dt = new Date(year, month - 1, day, 12, 0, 0, 0)
   dt.setFullYear(year)
+  dt.toJSON = dtToJSON
   return dt
 }
 
 export function datetimeSerialize (dt: Date) {
+  if (typeof dt === 'string' && dt) dt = new Date(dt)
   return dt instanceof Date ? `${String(dt.getFullYear()).padStart(4, '0')}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}T${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}` : ''
 }
 
@@ -19,6 +28,7 @@ export function datetimeDeserialize (v: string) {
   const [year, month, day, hour, minute] = v.split(/[T:-]/).map(Number)
   const dt = new Date(year, month - 1, day, hour, minute, 0, 0)
   dt.setFullYear(year)
+  dt.toJSON = dtToJSON
   return dt
 }
 
