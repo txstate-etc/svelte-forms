@@ -40,6 +40,7 @@ This is the basic building block that represents the state of a single input fie
 * `valid` - `true` when you would want to show the user that a field passed validation (e.g. by giving it a green border).
 * `invalid` - `true` when you would want to show the user that a field failed validation (e.g. by giving it a red border). Note that if the form has never been validated or the user hasn't advanced this far down the form, `valid` and `invalid` can both be false (likely leaving the field with a neutral color).
 * `setVal` - Use this function to send data changes back to the form state. Send the type expected in the JSON payload.
+  * If you need to know the current state to make your change, you can give `setVal` a function that receives the current value as its first argument. Do NOT mutate the input. For example: `setVal(arr => [...arr, 'new value'])` will push `new value` onto the existing array.
 * `onChange` - A convenience function that can be passed transparently into an input's `on:change`. It depends on `this.value` or `e.detail` to contain the data. The deserialize function will be run on it to convert it to the type expected in the JSON payload. Recommended to also pass this to `on:keydown` for quicker feedback.
 * `onBlur` - Pass this to your input's `on:blur` so that moving focus out of it will dirty it and show error messages (like one that says it's required). Without this the user would have to change the field to dirty it.
 
@@ -139,7 +140,6 @@ This library provides a bunch of serialize/deserialize functions to help you wor
 * `numberSerialize` - Use with input type="number" or type="text". The input will be coerced into a number and you will get a Number object in the JSON payload.
 * `numberDeserialize` - Use with input type="number" or type="text". The input will be coerced into a number and you will get a Number object in the JSON payload. The field will never be blank, it will fill with `0` when the user empties it.
 * `numberNullableDeserialize` - Same as `numberDeserialize` except you'll get undefined instead of 0 when the user leaves the field blank.
-
 
 ## Conditional vs Remove from DOM
 When a field disappears from the DOM, there could be two reasons:

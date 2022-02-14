@@ -36,8 +36,9 @@
   $: invalid = $fieldValid === 'invalid'
   $: valid = $fieldValid === 'valid'
 
-  function setVal (val: T) {
-    store.setField(finalPath, val)
+  function setVal (v: T|((v: T) => T)) {
+    if (typeof v === 'function') v = v($val)
+    store.setField(finalPath, v)
   }
 
   function onChange (e: any) {
