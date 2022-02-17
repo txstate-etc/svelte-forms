@@ -26,7 +26,7 @@
   function onResize (e: UIEvent & { currentTarget: EventTarget & HTMLFormElement, detail: ElementSize }) {
     const rounded = Math.floor(e.detail.clientWidth / 100) * 100
     dataeq = breakpoints.filter(b => b > rounded).map(b => b + 'px').join(' ')
-    if ($store.width !== rounded) $store.width = rounded
+    if ($store.width !== rounded) store.update(v => ({ ...v, width: rounded }))
   }
 
   let form
