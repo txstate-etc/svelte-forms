@@ -114,6 +114,8 @@ interface Profile {
 * `maxLength` - Repeated from the prop; presumably you already know this, but it might be cleaner to have it repeated here if you are trying to show the user something about how much they have left.
 * `currentLength` - In case you are reporting to the user how much they have left.
 * `onDelete` - A function to delete the current element. If you are making a button to remove array elements, you can pass this to its `on:click`.
+* `onMoveUp` - A function to move the current element earlier in the array. If you are making a button to move array elements, you can pass this to its `on:click`.
+* `onAdd` - (rarely needed) A function to add a new element to the array. Normally you'd do this in the `addbutton` slot, but if you want to trigger it automatically based on something that happens inside one of the subforms, you can use this.
 ### "addbutton" Slot Props
 This component presents another slot where you can customize the button that adds a new element to the array.
 * `onClick` - A function to push a new element on the end of the array. Pass it to the "Add More" button's `on:click`.

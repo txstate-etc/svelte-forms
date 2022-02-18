@@ -117,6 +117,18 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.triggerValidation()
   }
 
+  moveUp (path: string, idx: number) {
+    if (idx === 0) return
+    this.update(v => {
+      const arr = [...get(v.data, path)]
+      const swap = arr[idx - 1]
+      arr[idx - 1] = arr[idx]
+      arr[idx] = swap
+      return { ...v, data: set(v.data, path, arr) }
+    })
+    this.triggerValidation()
+  }
+
   /**
    * Returns a store representing the field's value
    */

@@ -7,7 +7,7 @@
 
   export let path: string
   export let initialState: any = {}
-  export let startEmpty: boolean = false
+  export let startEmpty = false
   export let addMoreText: string = '+ Add'
   export let addMoreClass: string = ''
   export let maxedText = addMoreText
@@ -31,6 +31,10 @@
     return () => store.deleteFromArray(pathToArray, idx)
   }
 
+  function moveUp (idx: number) {
+    return () => store.moveUp(pathToArray, idx)
+  }
+
   $: maxed = $arr?.length >= maxLength
 </script>
 
@@ -38,7 +42,7 @@
   <slot name="above" path={pathToArray} value={$arr} {maxed} {maxLength} currentLength={$arr.length}/>
   {#each $arr as value,index}
     <SubForm path={String(index)} let:path>
-      <slot {path} {index} {value} {maxed} {maxLength} currentLength={$arr.length} onDelete={remove(index)} />
+      <slot {path} {index} {value} {maxed} {maxLength} currentLength={$arr.length} onDelete={remove(index)} onMoveUp={moveUp(index)} onAdd={onClick} />
     </SubForm>
   {/each}
   <slot name="addbutton" {onClick} {maxed} {maxLength} currentLength={$arr.length}>
