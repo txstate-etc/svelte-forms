@@ -111,8 +111,9 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
 
   deleteFromArray (path: string, idx: number) {
     this.update(v => {
-      const arr = get(v.data, path)
-      return { ...v, data: set(v.data, path, [...arr].splice(idx, 1)) }
+      const arr = [...get(v.data, path)]
+      arr.splice(idx, 1)
+      return { ...v, data: set(v.data, path, arr) }
     })
     this.triggerValidation()
   }
