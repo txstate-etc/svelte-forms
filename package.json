@@ -1,6 +1,6 @@
 {
   "name": "@txstate-mws/svelte-forms",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "scripts": {
     "prepublishOnly": "echo \"Do not publish from the root. Run npm run package and publish the package directory.\"; exit 1;",
     "dev": "svelte-kit dev",
@@ -10,7 +10,7 @@
     "lint": "eslint --ignore-path .gitignore ."
   },
   "dependencies": {
-    "@txstate-mws/svelte-components": "^1.0.4",
+    "@txstate-mws/svelte-components": "^1.2.1",
     "@txstate-mws/svelte-store": "^1.0.3",
     "txstate-utils": "^1.6.1"
   },
