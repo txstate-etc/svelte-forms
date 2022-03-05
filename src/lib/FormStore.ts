@@ -24,6 +24,7 @@ type ValidState = 'valid'|'invalid'|undefined
 
 interface IFormStore<StateType> {
   data: Partial<StateType>
+  conditionalData: Record<string, any>
   messages: {
     all: Feedback[]
     global: Feedback[]
@@ -40,7 +41,7 @@ interface IFormStore<StateType> {
 
 const errorTypes = { [MessageType.ERROR]: true, [MessageType.SYSTEM]: true }
 
-const initialState = { data: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, validating: false, submitting: false, saved: false, dirty: undefined, width: 800 }
+const initialState = { data: {}, conditionalData: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, validating: false, submitting: false, saved: false, dirty: undefined, width: 800 }
 export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   validationTimer?: NodeJS.Timeout
   validateVersion: number
@@ -82,7 +83,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
 
   setData (data: StateType) {
     this.dirtyForm = true
-    this.update(v => ({ ...v, data }))
+    this.update(v => ({ ...v, data, conditionalData: {} }))
     this.triggerValidation()
   }
 

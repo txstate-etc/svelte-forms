@@ -61,7 +61,19 @@
     store.unregisterField(finalPath)
   })
 
-  $: if (conditional === false) store.setField(finalPath, undefined)
+  let lastConditional = conditional
+  function handleConditionalData (..._: any) {
+    if (conditional === false) {
+      store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: $val } }))
+      store.setField(finalPath, undefined)
+    } else if (lastConditional === false) {
+      store.setField(finalPath, $store.conditionalData[finalPath])
+      store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: undefined } }))
+    }
+    lastConditional = conditional
+  }
+
+  $: handleConditionalData(conditional)
 </script>
 
 {@html '<!-- svelte-forms(' + finalPath + ') -->'}

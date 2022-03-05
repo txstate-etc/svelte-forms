@@ -64,6 +64,12 @@
     <input id="numbernull" type="text" name={path} {value} on:change={onChange} on:keyup={onChange}>
     <div>When left empty this field in the store will be undefined.</div>
   </Field>
+  <br>
+  <Field path="conditional" conditional={$store?.data?.numbernull != null} let:path let:value let:onChange serialize={nullableSerialize} deserialize={nullableDeserialize}>
+    <label for="conditional">Conditional Field: </label>
+    <input id="conditional" type="text" name={path} {value} on:change={onChange} on:keyup={onChange}>
+    <div>When the above field is null, this field should be hidden but its state should be saved.</div>
+  </Field>
   {#if saved}Save successful!{/if}
   <br>
   <button disabled={submitting || invalid}>Submit</button>
