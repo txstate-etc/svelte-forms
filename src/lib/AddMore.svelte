@@ -5,8 +5,52 @@
   import type { FormStore } from './FormStore'
   import SubForm from './SubForm.svelte'
 
+  type T = $$Generic
+  interface $$Slots {
+    above: {
+      path: string
+      value: T[]
+      minned: boolean
+      maxed: boolean
+      minLength: number
+      maxLength: number
+      currentLength: number
+    }
+    default: {
+      path: string
+      index: number
+      value: T
+      minned: boolean
+      maxed: boolean
+      minLength: number
+      maxLength: number
+      currentLength: number
+      onDelete: () => void
+      onMoveUp: () => void
+      onAdd: () => void
+    }
+    addbutton: {
+      minned: boolean
+      maxed: boolean
+      minLength: number
+      maxLength: number
+      currentLength: number
+      onClick: () => void
+      onDelete: () => void
+    }
+    below: {
+      path: string
+      value: T[]
+      minned: boolean
+      maxed: boolean
+      minLength: number
+      maxLength: number
+      currentLength: number
+    }
+  }
+
   export let path: string
-  export let initialState: any = {}
+  export let initialState: T = {} as T
   export let addMoreText: string = '+ Add'
   export let addMoreClass: string = ''
   export let minLength = 0
@@ -18,7 +62,7 @@
   const pathToArray = [inheritedPath, path].filter(isNotBlank).join('.')
 
   const store = getContext<FormStore>(FORM_CONTEXT)
-  const arr = store.getField<any[]>(pathToArray)
+  const arr = store.getField<T[]>(pathToArray)
   if (!$arr?.length) {
     store.setField(pathToArray, [])
     for (let i = 0; i < minLength; i++) store.push(pathToArray, initialState)

@@ -1,23 +1,42 @@
 <script lang="ts">
   import { eq } from '@txstate-mws/svelte-components'
-  import { onMount, setContext } from 'svelte'
+  import { createEventDispatcher, onMount, setContext } from 'svelte'
   import { FormStore, FORM_CONTEXT } from '$lib/FormStore'
   import type { Feedback, SubmitResponse } from '$lib/FormStore'
 
+  type T = $$Generic
+
+  interface $$Events {
+    saved: CustomEvent<T>
+  }
+
+  interface $$Slots {
+    default: {
+      messages: Feedback[]
+      allMessages: Feedback[]
+      saved: boolean
+      validating: boolean
+      submitting: boolean
+      valid: boolean
+      invalid: boolean
+    }
+  }
+
   let className = ''
   export { className as class }
-  export let submit: (state: any) => Promise<SubmitResponse<any>> = undefined
-  export let validate: (state: any) => Promise<Feedback[]> = undefined
-  export let success: () => void|Promise<void> = undefined
+  export let submit: (state: T) => Promise<SubmitResponse<T>> = undefined
+  export let validate: (state: T) => Promise<Feedback[]> = undefined
   export let autocomplete: string|undefined = undefined
   export let name: string|undefined = undefined
-  export let store = new FormStore(submit, validate)
-  export let preload: any = undefined
+  export let store = new FormStore<T>(submit, validate)
+  export let preload: T = undefined
   setContext(FORM_CONTEXT, store)
+
+  const dispatch = createEventDispatcher()
 
   async function onSubmit () {
     const resp = await store.submit()
-    if (resp.success) await success?.()
+    if (resp.success) dispatch('saved', resp.data)
   }
 
   let form

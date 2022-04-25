@@ -219,7 +219,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       this.update(v => ({ ...v, messages: { ...v.messages, all: messages } }))
       return {
         success: false,
-        data: this.value.data,
+        data: this.value.data as StateType,
         messages
       }
     } finally {

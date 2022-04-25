@@ -4,22 +4,11 @@
   import { Feedback, FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { FormStore } from './FormStore'
 
-  export let path: string
-  export let defaultValue: any = undefined
-  export let serialize: ((value: any) => string)|undefined = undefined
-  export let deserialize: ((value: string) => any)|undefined = undefined
-  export let conditional: boolean|undefined = undefined
-  const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
-  const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
-
-  const store = getContext<FormStore>(FORM_CONTEXT)
-  store.registerField(finalPath, defaultValue)
-
-  type T = any
+  type T = $$Generic<object|string|number|boolean|Date>
   interface $$Slots {
     default: {
       path: string
-      value: T
+      value: any
       messages: Feedback[]
       valid: boolean
       invalid: boolean
@@ -28,6 +17,18 @@
       onBlur: () => void
     }
   }
+
+  export let path: string
+  export let defaultValue: any = undefined
+  export let serialize: ((value: T) => string)|undefined = undefined
+  export let deserialize: ((value: string) => T)|undefined = undefined
+  export let conditional: boolean|undefined = undefined
+  const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
+  const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
+
+  const store = getContext<FormStore>(FORM_CONTEXT)
+  store.registerField(finalPath, defaultValue)
+
   const val = store.getField<T>(finalPath)
   const messages = store.getFeedback(finalPath)
   $: resolvedVal = serialize ? serialize($val) : $val
