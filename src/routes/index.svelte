@@ -2,7 +2,7 @@
   import { sleep } from 'txstate-utils'
   import { AddMore, Field, Form, FormStore, MessageType, nullableSerialize, nullableDeserialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from '$lib'
 
-  async function submit (data) {
+  async function submit (data: any) {
     await sleep(3000)
     return {
       success: true,
@@ -11,7 +11,7 @@
     }
   }
 
-  async function validate (data) {
+  async function validate () {
     await sleep(500)
     return [{
       type: MessageType.ERROR,

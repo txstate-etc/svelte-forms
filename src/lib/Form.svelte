@@ -39,7 +39,7 @@
     if (resp.success) dispatch('saved', resp.data)
   }
 
-  let form
+  let form: HTMLFormElement
   onMount(() => {
     if (preload != null) store.setData(preload)
     const mutationobserver = new MutationObserver(() => store.reorderFields(form))

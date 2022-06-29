@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getContext, onDestroy } from 'svelte'
   import { isNotBlank } from 'txstate-utils'
-  import { Feedback, FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
+  import { type Feedback, FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { FormStore } from './FormStore'
 
   type T = $$Generic<object|string|number|boolean|Date>
