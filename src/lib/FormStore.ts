@@ -196,8 +196,9 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   private async validate () {
+    if (!this.validateFn) return
     const saveVersion = ++this.validateVersion
-    const newMessages = await this.validateFn?.(this.value.data)
+    const newMessages = await this.validateFn(this.value.data)
     if (this.validateVersion === saveVersion) {
       this.update(v => ({ ...v, validating: false, messages: { ...v.messages, all: newMessages } }))
     }
