@@ -89,7 +89,6 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
 
   setField (path: string, val: any) {
     this.update(v => ({ ...v, data: set(v.data, path, val) }))
-    this.dirtyField(path)
     this.triggerValidation()
   }
 

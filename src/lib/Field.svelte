@@ -40,6 +40,7 @@
   function setVal (v: T|((v: T) => T)) {
     if (typeof v === 'function') v = v($val)
     store.setField(finalPath, v)
+    store.dirtyField(finalPath)
   }
 
   function onChange (e: any) {
