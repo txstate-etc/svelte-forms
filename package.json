@@ -1,10 +1,10 @@
 {
   "name": "@txstate-mws/svelte-forms",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "scripts": {
     "prepublishOnly": "echo \"Do not publish from the root. Run npm run package and publish the package directory.\"; exit 1;",
-    "dev": "svelte-kit dev",
-    "package": "svelte-kit package",
+    "dev": "vite dev",
+    "package": "svelte-package",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "eslint --ignore-path .gitignore ."
@@ -17,6 +17,7 @@
   "devDependencies": {
     "@sveltejs/adapter-auto": "next",
     "@sveltejs/kit": "next",
+    "@sveltejs/package": "next",
     "eslint-config-standard-with-typescript": "^21.0.1",
     "eslint-plugin-svelte3": "^3.2.1",
     "svelte": "^3.44.0",
@@ -24,7 +25,8 @@
     "svelte-preprocess": "^4.9.4",
     "svelte2tsx": "^0.4.14",
     "tslib": "^2.3.1",
-    "typescript": "^4.4.3"
+    "typescript": "^4.4.3",
+    "vite": "^3.1.1"
   },
   "type": "module"
 }
