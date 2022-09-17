@@ -33,6 +33,7 @@ interface IFormStore<StateType> {
   validField: Record<string, ValidState>
   valid: boolean
   invalid: boolean
+  showingInlineErrors: boolean
   validating: boolean
   submitting: boolean
   saved: boolean
@@ -41,7 +42,7 @@ interface IFormStore<StateType> {
 
 const errorTypes = { [MessageType.ERROR]: true, [MessageType.SYSTEM]: true }
 
-const initialState = { data: {}, conditionalData: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, validating: false, submitting: false, saved: false, dirty: undefined, width: 800 }
+const initialState = { data: {}, conditionalData: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, showingInlineErrors: false, validating: false, submitting: false, saved: false, dirty: undefined, width: 800 }
 export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   validationTimer?: NodeJS.Timeout
   validateVersion: number
@@ -72,6 +73,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     state.validField = validField
     state.invalid = invalid
     state.valid = !invalid
+    state.showingInlineErrors = Object.keys(state.messages.fields).length > 0
     super.set(state)
   }
 
