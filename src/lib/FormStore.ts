@@ -73,7 +73,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     state.validField = validField
     state.invalid = invalid
     state.valid = !invalid
-    state.showingInlineErrors = Object.keys(state.messages.fields).length > 0
+    state.showingInlineErrors = Object.values(state.messages.fields).some(msgs => msgs.some(m => m.type === 'error'))
     super.set(state)
   }
 
