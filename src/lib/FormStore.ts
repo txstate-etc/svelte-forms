@@ -193,7 +193,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     clearTimeout(this.validationTimer)
     this.validationTimer = setTimeout(() => {
       this.validate().catch(console.error)
-    }, 200)
+    }, 300)
   }
 
   private async validate () {
