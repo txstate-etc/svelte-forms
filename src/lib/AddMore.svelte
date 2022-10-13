@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getContext } from 'svelte'
+  import { getContext, onMount } from 'svelte'
   import { isNotBlank } from 'txstate-utils'
   import { FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { FormStore } from './FormStore'
@@ -63,10 +63,9 @@
 
   const store = getContext<FormStore>(FORM_CONTEXT)
   const arr = store.getField<T[]>(pathToArray)
-  if (!$arr?.length) {
-    store.setField(pathToArray, [])
-    for (let i = 0; i < minLength; i++) store.push(pathToArray, initialState)
-  }
+  const reactToArr = (..._: any) => { if ($arr == null) store.setField(pathToArray, []) }
+  $: reactToArr($arr)
+
   function onClick () {
     if (!maxed) store.push(pathToArray, initialState)
   }
@@ -78,6 +77,12 @@
   function moveUp (idx: number) {
     return () => store.moveUp(pathToArray, idx)
   }
+
+  onMount(() => {
+    if (!$arr?.length) {
+      for (let i = 0; i < minLength; i++) store.push(pathToArray, initialState)
+    }
+  })
 
   $: maxed = $arr?.length >= maxLength
   $: minned = ($arr?.length ?? 0) <= minLength
