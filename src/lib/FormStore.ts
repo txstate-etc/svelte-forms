@@ -20,7 +20,7 @@ export interface SubmitResponse<StateType> {
   messages: Feedback[]
 }
 
-type ValidState = 'valid'|'invalid'|undefined
+type ValidState = 'valid' | 'invalid' | undefined
 
 interface IFormStore<StateType> {
   data: Partial<StateType>
@@ -48,6 +48,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   validateVersion: number
   fields: Map<string, number>
   dirtyFields: Map<string, boolean>
+  dirtyFieldsNextTick: Map<string, boolean>
   dirtyForm: boolean
   submitPromise?: Promise<SubmitResponse<StateType>>
 
@@ -58,8 +59,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     super(initialState)
     this.validateVersion = 0
     this.fields = new Map()
-    this.dirtyFields = new Map()
-    this.dirtyForm = false
+    this.reset()
   }
 
   set (state: IFormStore<StateType>) {
@@ -80,6 +80,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   reset (data?: StateType) {
     this.dirtyForm = false
     this.dirtyFields = new Map()
+    this.dirtyFieldsNextTick = new Map()
     this.set({ ...initialState, data: data ?? {} })
   }
 
@@ -94,11 +95,36 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.triggerValidation()
   }
 
+  /**
+   * We make fields dirty when they blur or start getting data, but if we are
+   * naive about it we end up with this scenario:
+   * 1. user fills in field #1
+   * 2. validation is sent to server and says field #2 is required
+   * 3. we do not show the error on field #2 because user hasn't gotten there yet
+   * 4. user starts typing in field #2
+   * 5. we mark field #2 dirty and show the required error
+   * 6. validation is sent to server and server reponds that field #2 is fine because the user just put a character in it
+   * 7. we hide the required error after a brief flash
+   *
+   * We'd rather avoid that flash, so we have a "dirty on next tick" concept where
+   * the field will be dirty after the next validation completes or there is a
+   * major screen redraw.
+   */
   dirtyField (path: string) {
+    this.dirtyNextTick(path)
     if (this.fields.has(path)) {
       const dirtyIndex = this.fields.get(path)
       for (const [key, idx] of this.fields) {
-        if (idx <= dirtyIndex) this.dirtyFields.set(key, true)
+        if (idx <= dirtyIndex) this.dirtyFieldsNextTick.set(key, true)
+      }
+    }
+  }
+
+  dirtyNextTick (path?: string) {
+    for (const [key, val] of this.dirtyFieldsNextTick.entries()) {
+      if (path !== key) {
+        this.dirtyFields.set(key, val)
+        this.dirtyFieldsNextTick.delete(key)
       }
     }
   }
@@ -181,6 +207,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
         this.fields.set(path, this.fields.size)
       }
     }
+    this.dirtyNextTick()
     let dirtyStarted = false
     for (const [key] of Array.from(this.fields).reverse()) {
       if (this.dirtyFields.get(key)) dirtyStarted = true
@@ -201,6 +228,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     const saveVersion = ++this.validateVersion
     const newMessages = await this.validateFn(this.value.data)
     if (this.validateVersion === saveVersion) {
+      this.dirtyNextTick()
       this.update(v => ({ ...v, validating: false, messages: { ...v.messages, all: newMessages } }))
     }
   }

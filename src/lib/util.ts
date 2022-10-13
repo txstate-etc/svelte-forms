@@ -4,7 +4,7 @@ function dtToJSON () {
   return dateToISOWithTZ(this)
 }
 
-export function dateSerialize (dt: Date|string) {
+export function dateSerialize (dt: Date | string) {
   if (typeof dt === 'string' && dt) dt = new Date(dt)
   return dt instanceof Date ? `${String(dt.getFullYear()).padStart(4, '0')}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}` : ''
 }
