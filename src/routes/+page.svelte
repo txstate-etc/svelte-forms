@@ -1,6 +1,6 @@
 <script lang="ts">
   import { sleep } from 'txstate-utils'
-  import { AddMore, Field, Form, FormStore, MessageType, nullableSerialize, nullableDeserialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from '$lib'
+  import { AddMore, Field, Form, MessageType, nullableSerialize, nullableDeserialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from '$lib'
 
   async function submit (data: any) {
     await sleep(3000)
@@ -19,13 +19,11 @@
       path: 'multi.0.name'
     }]
   }
-
-  let store: FormStore
 </script>
 
 <h1>Svelte Forms</h1>
 
-<Form bind:store {submit} {validate} let:saved let:submitting let:invalid>
+<Form {submit} {validate} let:saved let:submitting let:invalid let:data>
   This is an example form.<br>
   <Field path="test" defaultValue='Sara' serialize={nullableSerialize} deserialize={nullableDeserialize} let:path let:value let:onChange>
     <input type="text" name={path} value={value} on:change={onChange}>
@@ -65,7 +63,7 @@
     <div>When left empty this field in the store will be undefined.</div>
   </Field>
   <br>
-  <Field path="conditional" conditional={$store?.data?.numbernull != null} let:path let:value let:onChange serialize={nullableSerialize} deserialize={nullableDeserialize}>
+  <Field path="conditional" conditional={data?.numbernull != null} let:path let:value let:onChange serialize={nullableSerialize} deserialize={nullableDeserialize}>
     <label for="conditional">Conditional Field: </label>
     <input id="conditional" type="text" name={path} {value} on:change={onChange} on:keyup={onChange}>
     <div>When the above field is null, this field should be hidden but its state should be saved.</div>

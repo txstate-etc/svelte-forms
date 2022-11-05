@@ -17,6 +17,7 @@ Use this component to start a new form. Each form has a goal of constructing a p
 * `store` - (optional, bindable) The `FormStore` object that manages all the state. You may pass in your own subclass of `FormStore`, or bind this prop to receive the instance that is automatically created for you. Once you have the store instance, you can call its many mutation functions like `store.setData(newPayload)`.
 * `preload` - (optional) If the user is editing an existing object, use this prop to pass in the existing object. Properties not present in the form will be left alone while the user is editing. Only works once, when the form mounts in the browser. Alternatively, you can bind the store and call `setData` at any time. Validation will immediately kick off after the preload or any `setData` call.
 ### Default Slot Props
+* `data` - The current data being managed by the form. This will update as the user interacts with the form, so it provides an easy way to do conditional logic or show informational messages.
 * `messages` - Array of global messages to show the user at the bottom of the form. Messages that had a `path` are NOT included in this list. If you fail to show these to the user they will be lost.
 * `allMessages` - Array of all the messages returned by the last validation/submission. You would only need this if you have decided to show all validation errors in one place instead of inline with the failed inputs.
 * `saved` - `true` if the JSON payload has not changed since the last successful submission
@@ -24,28 +25,29 @@ Use this component to start a new form. Each form has a goal of constructing a p
 * `submitting` - `true` if the form is currently being submitted; use to disable the submit button or show a loading indicator. Note that simultaneous submissions are disallowed no matter what you show to the user. Submission attempts while a submission is in flight are ignored.
 * `valid` - `true` if the last validation/submission did not return any `error` or `system` messages
 * `invalid` - `true` if the last validation/submission returned at least one `error` or `system` message
+* `showingInlineErrors` - `true` if there are any fields with visible errors (not warning or success messages). Use this to show a final message at the bottom of the form, near the submit button, informing the user that the form is invalid. Preferably also use aria-live="polite" on this message. If you do not do this and your form is longer than the user's screen, it's possible a field above their current view will be marked invalid and they will be confused why the submit button does not work. Further, without doing this and giving it the aria-live attribute, screen reader users may not have any feedback that their form submission is invalid. You may set aria-live on individual inline messages, but that can get noisy.
 
 ## Field
 This is the basic building block that represents the state of a single input field. It provides all the slot props you need to build an `<input>` inside it.
 ### Props
 * `path` - The path to this input's data in the JSON payload. If the Field is inside an `AddMore` or `SubForm` component, this path should be relative to the nearest one. For instance, the Field in `<SubForm path="nested"><Field path="name"></Field></SubForm>` maps to `payload.nested.name`.
-* `defaultValue` - (optional) If desired, you may set an initial value to be loaded into an empty form payload. Provide the data type expected in the payload; if you are using serialize/deserialize functions there may be a type mismatch between the input element's value attribute and the payload data.
+* `defaultValue` - (optional) If desired, you may set an initial value to be loaded into an empty form payload. Provide the data type expected in the payload; if you are using serialize/deserialize functions there may be a type mismatch between the input element's value attribute and the payload data. Note that setting a `preload` will override any default values, even if the preload has an undefined or null value. This is because `preload` assumes that the user is editing a form that had previously been validly filled out in its entirety.
 * `serialize` - (optional) Provide a function that accepts data of the type expected in the JSON payload and converts it to the type expected by your slot content. This will frequently be used to convert a Date or number in the payload into a string for an `<input>` element. This library provides some, see documentation below.
 * `deserialize` - (optional) The reverse of serialize. Accept data from your slot and convert it to what you need in the payload. This will frequently be used to convert the string from an `<input>` element into something like a Date or number. This only has an effect if you use the `onChange` slot prop. If you use `setVal` instead, you are expected to do the type conversion before calling `setVal`.
 * `conditional` - (optional) see "Conditional vs Remove from DOM" below
 ### Default Slot Props
-* `path` - The full absolute path to this field in the JSON payload. In the example above (for the `path` prop), it would be `nested.name`. Recommended to pass this into input's name attribute so it's easy to track which inputs map where when inspecting the DOM.
-* `value` - The value to be passed into the input. If you skip this it will be an uncontrolled input and updates to the form's store will not be reflected back to the user.
+* `path` - The full absolute path to this field in the JSON payload. In the example above (for the `path` prop), it would be `nested.name`. It is recommended to pass this into the input's name attribute so it's easy to track which inputs map where when inspecting the DOM.
+* `value` - The value to be passed into the input. If you skip this it will be an uncontrolled input and updates to the form's store will not be reflected back to the user, including if you set a `preload`.
 * `messages` - An array of validation messages from the server pertaining to this specific input. You should display them to the user as close to the input as possible so they can see where they messed up. The non-recommended alternative is to place all messaging at the top or bottom of the form.
 * `valid` - `true` when you would want to show the user that a field passed validation (e.g. by giving it a green border).
 * `invalid` - `true` when you would want to show the user that a field failed validation (e.g. by giving it a red border). Note that if the form has never been validated or the user hasn't advanced this far down the form, `valid` and `invalid` can both be false (likely leaving the field with a neutral color).
 * `setVal` - Use this function to send data changes back to the form state. Send the type expected in the JSON payload.
   * If you need to know the current state to make your change, you can give `setVal` a function that receives the current value as its first argument. Do NOT mutate the input. For example: `setVal(arr => [...arr, 'new value'])` will push `new value` onto the existing array.
-* `onChange` - A convenience function that can be passed transparently into an input's `on:change`. It depends on `this.value` or `e.detail` to contain the data. The deserialize function will be run on it to convert it to the type expected in the JSON payload. Recommended to also pass this to `on:keydown` for quicker feedback.
-* `onBlur` - Pass this to your input's `on:blur` so that moving focus out of it will dirty it and show error messages (like one that says it's required). Without this the user would have to change the field to dirty it.
+* `onChange` - A convenient alternative to `setVal` that can be passed directly into an input's `on:change`. It depends on `this.value` or `e.detail` to contain the updated data. The deserialize function will be run on it to convert it to the type expected in the JSON payload. Recommended to also pass this to `on:keydown` for quicker feedback. If you have a complicated field to build, you may not have a suitable `input` element for `onChange` and you should call `setVal` instead.
+* `onBlur` - Pass this to your input's `on:blur` so that moving focus out of it will dirty it and show error messages (like one that says it's required). Without this the user would have to change the field (or a field below it) to dirty it.
 
 ## SubForm
-Use this component to start a new object in your JSON payload. Any `Field` components inside it will have their path prepended with its path. For instance:
+Use this component to start a new sub-object in your JSON payload. Any `Field` components inside it will have their path prepended with its path. For instance:
 ```svelte
 <Form name="profile">
   <Field path="fullname"> ... </Field>
@@ -90,11 +92,11 @@ would create a payload with the following interface
 ```typescript
 interface Profile {
   fullname: string
-  addresses: [{
+  addresses: {
     city: string
     state: string
     zip: string
-  }]
+  }[]
 }
 ```
 ### Props
@@ -150,10 +152,12 @@ When a field disappears from the DOM, there could be two reasons:
 
 To help form creators distinguish these two cases from one another, there is a `conditional` prop on `Field`, `SubForm`, and `AddMore`. When you want to hide the form element because its data is irrelevant (e.g. if the user does not upload an image, I don't need to collect alt text), use this prop instead of using svelte `{#if}` blocks. It will remove the field from the DOM and also set the field value to undefined, effectively deleting it from the form data.
 
+When a conditional field is removed from the form, its data is deleted from the payload, but the data is automatically saved elsewhere in the FormStore. When the conditional field returns to the form, the data also returns as it was before removal. For instance, an image is added to a form, which activates the alt text field. The user adds alt text but then deletes the image. The alt text field disappears and the alt text is removed from the payload. Then the user changes their mind and re-uploads the image. The alt text field will re-appear and will contain the previously entered alt text.
+
 ## Message Types
 In order to automate a lot of work around showing validation messages, this library has a fairly strict structure for them. Each validation or submission should generate an array of messages with the following properties:
 * `type` - May be one of the following four values:
-  * `error` - for messages that indicate validation error, i.e. the user did something wrong and should correct it
+  * `error` - for messages that indicate validation error that prevent successful form submission, i.e. the user did something wrong and should correct it
   * `warning` - for messages that the user should see, but will still be accepted if submitted
   * `success` - for messages that positively indicate a successful validation... these are unusual but for example, "Hooray! That username is available!"
   * `system` - for messages that indicate a system failure instead of a validation error. For instance, the server returned a 503 Unavailable. You probably only want to return these from your `submit` function and not your `validate` function, but that's up to you.
@@ -172,7 +176,7 @@ Similarly, it is possible to nest `AddMore` components to create an array of arr
 
 # Developing
 
-This is a component library with no UI of its own, but there is a demo available:
+This is a component library with no UI of its own, but there is an extremely minimal demo available:
 
 ```bash
 npm run dev -- --open

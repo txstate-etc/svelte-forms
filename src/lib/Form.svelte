@@ -20,6 +20,7 @@
       valid: boolean
       invalid: boolean
       showingInlineErrors: boolean
+      data: Partial<T>
     }
   }
 
@@ -55,5 +56,5 @@
 </script>
 
 <form bind:this={form} {name} class={className} on:submit|preventDefault={onSubmit} use:eq={{ store }} {autocomplete}>
-  <slot messages={$store.messages.global} allMessages={$store.messages.all} saved={$store.saved} validating={$store.validating} submitting={$store.submitting} valid={$store.valid} invalid={$store.invalid} showingInlineErrors={$store.showingInlineErrors} />
+  <slot messages={$store.messages.global} allMessages={$store.messages.all} saved={$store.saved} validating={$store.validating} submitting={$store.submitting} valid={$store.valid} invalid={$store.invalid} showingInlineErrors={$store.showingInlineErrors} data={$store.data} />
 </form>

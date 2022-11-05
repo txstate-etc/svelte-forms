@@ -41,6 +41,11 @@ interface IFormStore<StateType> {
 }
 
 const errorTypes = { [MessageType.ERROR]: true, [MessageType.SYSTEM]: true }
+function messageIsError (m: Feedback) { return !!errorTypes[m.type] }
+function setPathValid (validField: Record<string, ValidState>, path: string) {
+  validField[path] = 'valid'
+  return validField
+}
 
 const initialState = { data: {}, conditionalData: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, showingInlineErrors: false, validating: false, submitting: false, saved: false, dirty: undefined, width: 800 }
 export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
@@ -63,17 +68,23 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   set (state: IFormStore<StateType>) {
-    const invalid = state.messages.all.some(m => errorTypes[m.type])
-    const validField: Record<string, ValidState> = Array.from(this.fields.keys()).reduce((validField, path) => ({ ...validField, [path]: 'valid' }), {})
+    const invalid = state.messages.all.some(messageIsError)
+    const validField: Record<string, ValidState> = Array.from(this.fields.keys()).reduce(setPathValid, {})
     for (const m of state.messages.all) {
-      if (m.path && errorTypes[m.type]) validField[m.path] = 'invalid'
+      if (m.path && messageIsError(m)) validField[m.path] = 'invalid'
     }
-    state.messages.fields = state.messages.all.filter(m => m.path).reduce((acc, curr) => ({ ...acc, [curr.path]: (this.dirtyForm || this.dirtyFields.get(curr.path)) ? [...(acc[curr.path] ?? []), curr] : [] }), {})
+    state.messages.fields = state.messages.all.filter(m => m.path).reduce((acc, curr) => {
+      if (this.dirtyForm || this.dirtyFields.get(curr.path)) {
+        acc[curr.path] ??= []
+        acc[curr.path].push(curr)
+      }
+      return acc
+    }, {})
     state.messages.global = state.messages.all.filter(m => !m.path || !this.fields.has(m.path))
     state.validField = validField
     state.invalid = invalid
     state.valid = !invalid
-    state.showingInlineErrors = Object.values(state.messages.fields).some(msgs => msgs.some(m => m.type === 'error'))
+    state.showingInlineErrors = Object.values(state.messages.fields).some(msgs => msgs.some(messageIsError))
     super.set(state)
   }
 
@@ -111,7 +122,6 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
    * major screen redraw.
    */
   dirtyField (path: string) {
-    this.dirtyNextTick(path)
     if (this.fields.has(path)) {
       const dirtyIndex = this.fields.get(path)
       for (const [key, idx] of this.fields) {

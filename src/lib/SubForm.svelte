@@ -4,6 +4,15 @@
   import { FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { FormStore } from './FormStore'
 
+  type T = $$Generic
+
+  interface $$Slots {
+    default: {
+      path: string
+      value: Partial<T>
+    }
+  }
+
   export let path: string
   export let conditional: boolean|undefined = undefined
 
@@ -11,7 +20,7 @@
   const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
 
   const store = getContext<FormStore>(FORM_CONTEXT)
-  const obj = store.getField(path)
+  const obj = store.getField<T>(path)
 
   setContext(FORM_INHERITED_PATH, finalPath)
   $: if (conditional === false) store.setField(finalPath, undefined)
