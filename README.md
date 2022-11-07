@@ -174,6 +174,10 @@ Usually the `AddMore` component is for adding array items that are full objects.
 
 Similarly, it is possible to nest `AddMore` components to create an array of arrays. Use `<AddMore path="">` for the inner array.
 
+In a rare circumstance, you might want to surround an `AddMore` component with a div that provides a border, but the `AddMore` itself is conditional on some other field. If you just set the conditional, you'll end up with an empty wrapping div when the condition is not met. Ugly.
+
+In this case you can create a `SubForm` with the path and conditional, create your wrapping div inside it, then create the `AddMore` inside that, with `path=""`.
+
 # Developing
 
 This is a component library with no UI of its own, but there is an extremely minimal demo available:

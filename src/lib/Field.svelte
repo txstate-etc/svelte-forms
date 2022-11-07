@@ -22,7 +22,7 @@
   export let defaultValue: any = undefined
   export let serialize: ((value: T) => string)|undefined = undefined
   export let deserialize: ((value: string) => T)|undefined = undefined
-  export let conditional: boolean|undefined = undefined
+  export let conditional: boolean | undefined = true
   const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
   const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
 
@@ -63,12 +63,12 @@
     store.unregisterField(finalPath)
   })
 
-  let lastConditional = conditional
+  let lastConditional = true
   function handleConditionalData (..._: any) {
-    if (conditional === false) {
+    if (!conditional && lastConditional) {
       store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: $val } }))
       store.setField(finalPath, undefined)
-    } else if (lastConditional === false) {
+    } else if (conditional && !lastConditional) {
       store.setField(finalPath, $store.conditionalData[finalPath])
       store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: undefined } }))
     }

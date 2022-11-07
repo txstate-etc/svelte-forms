@@ -1,6 +1,6 @@
 <script lang="ts">
   import { sleep } from 'txstate-utils'
-  import { AddMore, Field, Form, MessageType, nullableSerialize, nullableDeserialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from '$lib'
+  import { AddMore, Field, Form, MessageType, SubForm, nullableSerialize, nullableDeserialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from '$lib'
 
   async function submit (data: any) {
     await sleep(3000)
@@ -11,7 +11,7 @@
     }
   }
 
-  async function validate () {
+  async function validate (data: any) {
     await sleep(500)
     return [{
       type: MessageType.ERROR,
@@ -63,11 +63,24 @@
     <div>When left empty this field in the store will be undefined.</div>
   </Field>
   <br>
-  <Field path="conditional" conditional={data?.numbernull != null} let:path let:value let:onChange serialize={nullableSerialize} deserialize={nullableDeserialize}>
+  <Field path="conditional" conditional={data?.numbernull != null} defaultValue="default value" let:path let:value let:onChange serialize={nullableSerialize} deserialize={nullableDeserialize}>
     <label for="conditional">Conditional Field: </label>
     <input id="conditional" type="text" name={path} {value} on:change={onChange} on:keyup={onChange}>
     <div>When the above field is null, this field should be hidden but its state should be saved.</div>
   </Field>
+  <SubForm path="multicond" conditional={data?.numbernull != null}>
+    <fieldset>
+      <AddMore path="" initialState={{ name: 'Barney' }} maxLength={3} minLength={2}>
+        <Field path="name" let:path let:value let:onChange let:onBlur let:messages let:invalid>
+          <input type="text" name={path} {value} class:invalid on:change={onChange} on:keyup={onChange} on:blur={onBlur}><br>
+          {#each messages as msg}
+            <div style='background-color: pink'>{msg.message}</div>
+          {/each}
+        </Field>
+      </AddMore>
+    </fieldset>
+  </SubForm>
+
   {#if saved}Save successful!{/if}
   <br>
   <button disabled={submitting || invalid}>Submit</button>

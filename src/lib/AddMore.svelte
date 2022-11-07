@@ -62,6 +62,7 @@
   const pathToArray = [inheritedPath, path].filter(isNotBlank).join('.')
 
   const store = getContext<FormStore>(FORM_CONTEXT)
+  store.registerArray(pathToArray, initialState, minLength)
   const arr = store.getField<T[]>(pathToArray)
   const reactToArr = (..._: any) => { if ($arr == null) store.setField(pathToArray, []) }
   $: reactToArr($arr)
@@ -77,12 +78,6 @@
   function moveUp (idx: number) {
     return () => store.moveUp(pathToArray, idx)
   }
-
-  onMount(() => {
-    if (!$arr?.length) {
-      for (let i = 0; i < minLength; i++) store.push(pathToArray, initialState)
-    }
-  })
 
   $: maxed = $arr?.length >= maxLength
   $: minned = ($arr?.length ?? 0) <= minLength

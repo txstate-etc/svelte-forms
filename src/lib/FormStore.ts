@@ -102,8 +102,13 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   setField (path: string, val: any) {
-    this.update(v => ({ ...v, data: set(v.data, path, val) }))
-    this.triggerValidation()
+    let wasDifferent = false
+    this.update(v => {
+      const curr = get(v.data, path)
+      wasDifferent = !this.equal(curr, val)
+      return { ...v, data: set(v.data, path, val) }
+    })
+    if (wasDifferent) this.triggerValidation()
   }
 
   /**
@@ -201,6 +206,14 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     for (const [key, idx] of this.fields) {
       if (idx > deletedidx) this.fields.set(key, idx - 1)
     }
+  }
+
+  registerArray (path: string, initialState: any, minLength: number) {
+    this.update(v => {
+      const val = [...(get<any[]>(v.data, path) ?? [])]
+      for (let i = val.length; i < minLength; i++) val.push(initialState)
+      return { ...v, data: set(v.data, path, val) }
+    })
   }
 
   reorderFields (form: HTMLFormElement) {
