@@ -21,10 +21,10 @@
 
   export let path: string
   export let defaultValue: any = undefined
-  export let notNull: boolean = false
-  export let number: boolean = false
-  export let date: boolean = false
-  export let datetime: boolean = false
+  export let notNull = false
+  export let number = false
+  export let date = false
+  export let datetime = false
   export let serialize: ((value: any) => string)|undefined = undefined
   export let deserialize: ((value: string) => any)|undefined = undefined
   export let conditional: boolean | undefined = true

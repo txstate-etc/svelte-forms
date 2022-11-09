@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getContext, onMount } from 'svelte'
+  import { getContext } from 'svelte'
   import { isNotBlank } from 'txstate-utils'
   import { FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { FormStore } from './FormStore'
@@ -9,12 +9,17 @@
   interface $$Slots {
     above: {
       path: string
+      index: undefined
       value: T[]
       minned: boolean
       maxed: boolean
       minLength: number
       maxLength: number
       currentLength: number
+      onClick: undefined
+      onDelete: undefined
+      onMoveUp: undefined
+      onAdd: undefined
     }
     default: {
       path: string
@@ -25,11 +30,15 @@
       minLength: number
       maxLength: number
       currentLength: number
+      onClick: undefined
       onDelete: () => void
       onMoveUp: () => void
       onAdd: () => void
     }
     addbutton: {
+      path: undefined
+      index: undefined
+      value: undefined
       minned: boolean
       maxed: boolean
       minLength: number
@@ -37,15 +46,22 @@
       currentLength: number
       onClick: () => void
       onDelete: () => void
+      onMoveUp: undefined
+      onAdd: () => void
     }
     below: {
       path: string
+      index: undefined
       value: T[]
       minned: boolean
       maxed: boolean
       minLength: number
       maxLength: number
       currentLength: number
+      onClick: undefined
+      onDelete: undefined
+      onMoveUp: undefined
+      onAdd: undefined
     }
   }
 
@@ -85,14 +101,14 @@
 </script>
 
 <SubForm {path} {conditional}>
-  <slot name="above" path={pathToArray} value={$arr} {minned} {maxed} {minLength} {maxLength} currentLength={$arr.length}/>
+  <slot name="above" path={pathToArray} value={$arr} {minned} {maxed} {minLength} {maxLength} currentLength={$arr.length} index={undefined} onClick={undefined} onAdd={undefined} onMoveUp={undefined} onDelete={undefined} />
   {#each $arr as value,index}
     <SubForm path={String(index)} let:path>
-      <slot {path} {index} {value} {minned} {maxed} {minLength} {maxLength} currentLength={$arr.length} onDelete={remove(index)} onMoveUp={moveUp(index)} onAdd={onClick} />
+      <slot {path} {index} {value} {minned} {maxed} {minLength} {maxLength} currentLength={$arr.length} onDelete={remove(index)} onMoveUp={moveUp(index)} onAdd={onClick} onClick={undefined} />
     </SubForm>
   {/each}
-  <slot name="addbutton" {onClick} onDelete={remove(lastIdx)} {minned} {maxed} {minLength} {maxLength} currentLength={$arr.length}>
+  <slot name="addbutton" {onClick} onAdd={onClick} onDelete={remove(lastIdx)} {minned} {maxed} {minLength} {maxLength} currentLength={$arr.length} index={undefined} path={undefined} value={undefined} onMoveUp={undefined}>
     <button type="button" class={addMoreClass} disabled={maxed} on:click={onClick}>{maxed ? maxedText : addMoreText}</button>
   </slot>
-  <slot name="below" path={pathToArray} value={$arr} {minned} {maxed} {minLength} {maxLength} currentLength={$arr.length}/>
+  <slot name="below" path={pathToArray} value={$arr} {minned} {maxed} {minLength} {maxLength} currentLength={$arr.length} index={undefined} onClick={undefined} onAdd={undefined} onMoveUp={undefined} onDelete={undefined} />
 </SubForm>
