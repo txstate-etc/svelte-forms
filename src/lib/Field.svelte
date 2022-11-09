@@ -21,27 +21,27 @@
 
   export let path: string
   export let defaultValue: any = undefined
-  export let notNull: boolean | undefined = undefined
-  export let number: boolean | undefined = undefined
-  export let date: boolean | undefined = undefined
-  export let datetime: boolean | undefined = undefined
+  export let notNull: boolean = false
+  export let number: boolean = false
+  export let date: boolean = false
+  export let datetime: boolean = false
   export let serialize: ((value: any) => string)|undefined = undefined
   export let deserialize: ((value: string) => any)|undefined = undefined
-  $: finalSerialize = (serialize ?? number
+  export let conditional: boolean | undefined = true
+  $: finalSerialize = (serialize ?? (number
     ? numberSerialize
     : datetime
       ? datetimeSerialize
       : date
         ? dateSerialize
-        : notNull ? undefined : nullableSerialize) as undefined | ((v: any) => string)
-  $: finalDeserialize = (deserialize ?? number
+        : notNull ? undefined : nullableSerialize)) as undefined | ((v: any) => string)
+  $: finalDeserialize = (deserialize ?? (number
     ? (notNull ? numberDeserialize : numberNullableDeserialize)
     : datetime
       ? datetimeDeserialize
       : date
         ? dateDeserialize
-        : (notNull ? undefined : nullableDeserialize)) as undefined | ((v: any) => string)
-  export let conditional: boolean | undefined = true
+        : (notNull ? undefined : nullableDeserialize))) as undefined | ((v: any) => string)
   const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
   const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
 
