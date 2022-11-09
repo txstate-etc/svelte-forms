@@ -66,7 +66,7 @@
   }
 
   export let path: string
-  export let initialState: T = {} as T
+  export let initialState: T = undefined
   export let addMoreText: string = '+ Add'
   export let addMoreClass: string = ''
   export let minLength = 0

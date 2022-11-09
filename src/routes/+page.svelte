@@ -84,6 +84,8 @@
   {#if saved}Save successful!{/if}
   <br>
   <button disabled={submitting || invalid}>Submit</button>
+
+  <pre>{JSON.stringify(data, null, 2)}</pre>
 </Form>
 
 <style>
