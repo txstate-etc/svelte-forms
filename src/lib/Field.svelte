@@ -3,7 +3,7 @@
   import { isNotBlank } from 'txstate-utils'
   import { type Feedback, FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { FormStore } from './FormStore'
-  import { dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, nullableDeserialize, nullableSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from './util'
+  import { dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, nullableDeserialize, nullableSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize, booleanDeserialize, booleanSerialize } from './util'
 
   type T = $$Generic<object|string|number|boolean|Date>
   interface $$Slots {
@@ -25,6 +25,7 @@
   export let number = false
   export let date = false
   export let datetime = false
+  export let boolean = false
   export let serialize: ((value: any) => string)|undefined = undefined
   export let deserialize: ((value: string) => any)|undefined = undefined
   export let conditional: boolean | undefined = true
@@ -34,14 +35,18 @@
       ? datetimeSerialize
       : date
         ? dateSerialize
-        : notNull ? undefined : nullableSerialize)) as undefined | ((v: any) => string)
+        : boolean
+          ? booleanSerialize
+          : notNull ? undefined : nullableSerialize)) as undefined | ((v: any) => string)
   $: finalDeserialize = (deserialize ?? (number
     ? (notNull ? numberDeserialize : numberNullableDeserialize)
     : datetime
       ? datetimeDeserialize
       : date
         ? dateDeserialize
-        : (notNull ? undefined : nullableDeserialize))) as undefined | ((v: any) => string)
+        : boolean
+          ? booleanDeserialize
+          : (notNull ? undefined : nullableDeserialize))) as undefined | ((v: any) => string)
   const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
   const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
 

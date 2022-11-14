@@ -55,3 +55,11 @@ export function numberNullableDeserialize (v?: string) {
   const n = Number(v)
   return isNaN(n) ? undefined : n
 }
+
+export function booleanSerialize (b: boolean) {
+  return b ? 'true' : 'false'
+}
+
+export function booleanDeserialize (v: string) {
+  return v === 'true'
+}
