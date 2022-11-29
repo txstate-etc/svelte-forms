@@ -3,7 +3,7 @@
   import { isNotBlank } from 'txstate-utils'
   import { type Feedback, FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { FormStore } from './FormStore'
-  import { dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, nullableDeserialize, nullableSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize, booleanDeserialize, booleanSerialize } from './util'
+  import { booleanDeserialize, booleanNullableDeserialize, booleanSerialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, defaultDeserialize, defaultSerialize, nullableDeserialize, nullableSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from './util'
 
   type T = $$Generic<object|string|number|boolean|Date>
   interface $$Slots {
@@ -16,6 +16,8 @@
       setVal: (val: T) => void
       onChange: (e?: any) => void
       onBlur: () => void
+      serialize: (value: any) => string
+      deserialize: (value: string) => any
     }
   }
 
@@ -37,7 +39,7 @@
         ? dateSerialize
         : boolean
           ? booleanSerialize
-          : notNull ? undefined : nullableSerialize)) as undefined | ((v: any) => string)
+          : (notNull ? defaultSerialize : nullableSerialize))) as ((v: any) => string)
   $: finalDeserialize = (deserialize ?? (number
     ? (notNull ? numberDeserialize : numberNullableDeserialize)
     : datetime
@@ -45,8 +47,8 @@
       : date
         ? dateDeserialize
         : boolean
-          ? booleanDeserialize
-          : (notNull ? undefined : nullableDeserialize))) as undefined | ((v: any) => string)
+          ? (notNull ? booleanDeserialize : booleanNullableDeserialize)
+          : (notNull ? defaultDeserialize : nullableDeserialize))) as ((v: string) => any)
   const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
   const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
 
@@ -55,7 +57,7 @@
 
   const val = store.getField<T>(finalPath)
   const messages = store.getFeedback(finalPath)
-  $: resolvedVal = finalSerialize ? finalSerialize($val) : $val
+  $: resolvedVal = finalSerialize($val)
 
   const fieldValid = store.getFieldValid(finalPath)
   $: invalid = $fieldValid === 'invalid'
@@ -69,9 +71,9 @@
 
   function onChange (e: any) {
     const resolvedVal = this.value ?? e.detail
-    const val = finalDeserialize ? finalDeserialize(resolvedVal) : resolvedVal
+    const val = finalDeserialize(resolvedVal)
     setVal(val)
-    const serialized = finalSerialize ? finalSerialize(val) : val
+    const serialized = finalSerialize(val)
     // the serialize/deserialize process can convert multiple distinct input values into undefined in the store
     // this means that if the user goes from one "undefined" state to another, the store state will not change,
     // as it's just undefined -> undefined. So the input's value is not reactively overwritten to the cleaned up value.
@@ -104,5 +106,5 @@
 
 {@html '<!-- svelte-forms(' + finalPath + ') -->'}
 {#if conditional !== false}
-  <slot path={finalPath} value={resolvedVal} messages={$messages} {valid} {invalid} {setVal} {onChange} {onBlur} />
+  <slot path={finalPath} value={resolvedVal} messages={$messages} {valid} {invalid} {setVal} {onChange} {onBlur} serialize={finalSerialize} deserialize={finalDeserialize} />
 {/if}

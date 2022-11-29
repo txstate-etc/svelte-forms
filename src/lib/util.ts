@@ -1,4 +1,4 @@
-import { dateToISOWithTZ } from 'txstate-utils'
+import { dateToISOWithTZ, isBlank } from 'txstate-utils'
 
 function dtToJSON () {
   return dateToISOWithTZ(this)
@@ -32,6 +32,14 @@ export function datetimeDeserialize (v: string) {
   return dt
 }
 
+export function defaultSerialize (v: string) {
+  return v
+}
+
+export function defaultDeserialize (v: string) {
+  return v
+}
+
 export function nullableSerialize (v: string) {
   return v == null ? '' : v
 }
@@ -51,15 +59,20 @@ export function numberDeserialize (v: string) {
 }
 
 export function numberNullableDeserialize (v?: string) {
-  if (v === '') return undefined
+  if (isBlank(v)) return undefined
   const n = Number(v)
   return isNaN(n) ? undefined : n
 }
 
-export function booleanSerialize (b: boolean) {
-  return b ? 'true' : 'false'
+export function booleanSerialize (b?: boolean) {
+  return String(!!b)
 }
 
-export function booleanDeserialize (v: string) {
-  return v === 'true'
+export function booleanDeserialize (b: string) {
+  return b === 'true'
+}
+
+export function booleanNullableDeserialize (b?: string) {
+  if (isBlank(b)) return undefined
+  return b === 'true'
 }
