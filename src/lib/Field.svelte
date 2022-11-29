@@ -73,12 +73,14 @@
     const resolvedVal = this.value ?? e.detail
     const val = finalDeserialize(resolvedVal)
     setVal(val)
-    const serialized = finalSerialize(val)
-    // the serialize/deserialize process can convert multiple distinct input values into undefined in the store
-    // this means that if the user goes from one "undefined" state to another, the store state will not change,
-    // as it's just undefined -> undefined. So the input's value is not reactively overwritten to the cleaned up value.
-    // we need this line here so that the input value stays in sync with the store
-    if (this.value !== serialized) this.value = serialized
+    if (this instanceof HTMLInputElement) {
+      const serialized = finalSerialize(val)
+      // the serialize/deserialize process can convert multiple distinct input values into undefined in the store
+      // this means that if the user goes from one "undefined" state to another, the store state will not change,
+      // as it's just undefined -> undefined. So the input's value is not reactively overwritten to the cleaned up value.
+      // we need this line here so that the input value stays in sync with the store
+      if (this.value !== serialized) this.value = serialized
+    }
   }
 
   function onBlur () {
