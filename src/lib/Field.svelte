@@ -53,7 +53,7 @@
   const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
 
   const store = getContext<FormStore>(FORM_CONTEXT)
-  store.registerField(finalPath, defaultValue)
+  store.registerField(finalPath, defaultValue, conditional)
 
   const val = store.getField<T>(finalPath)
   const messages = store.getFeedback(finalPath)

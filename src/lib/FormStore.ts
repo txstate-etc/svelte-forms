@@ -191,10 +191,10 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     return derivedStore(this, state => (this.dirtyFields.get(path) || this.dirtyForm) ? state.validField[path] : undefined)
   }
 
-  registerField (path: string, initialValue: any) {
+  registerField (path: string, initialValue: any, conditional?: boolean) {
     if (typeof initialValue !== 'undefined') {
       this.update(v => {
-        if ((!this.dirtyForm || this.mounted) && typeof get(v.data, path) === 'undefined') return { ...v, data: set(v.data, path, initialValue) }
+        if ((!this.dirtyForm || this.mounted || !conditional) && get(v.data, path) == null) return { ...v, data: set(v.data, path, initialValue) }
         return v
       })
     }
