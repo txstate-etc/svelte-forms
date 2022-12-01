@@ -32,6 +32,7 @@
   export let name: string|undefined = undefined
   export let store = new FormStore<T>(submit, validate)
   export let preload: T = undefined
+  if (preload != null) store.setData(preload)
   setContext(FORM_CONTEXT, store)
 
   const dispatch = createEventDispatcher()
@@ -43,7 +44,7 @@
 
   let form: HTMLFormElement
   onMount(() => {
-    if (preload != null) store.setData(preload)
+    store.mounted = true
     const mutationobserver = new MutationObserver(() => store.reorderFields(form))
     mutationobserver.observe(form, {
       subtree: true,

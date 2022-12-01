@@ -56,6 +56,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   dirtyFieldsNextTick: Map<string, boolean>
   dirtyForm: boolean
   submitPromise?: Promise<SubmitResponse<StateType>>
+  mounted?: boolean
 
   constructor (
     private submitFn: (data: Partial<StateType>) => Promise<SubmitResponse<StateType>>,
@@ -193,7 +194,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   registerField (path: string, initialValue: any) {
     if (typeof initialValue !== 'undefined') {
       this.update(v => {
-        if (typeof get(v.data, path) === 'undefined') return { ...v, data: set(v.data, path, initialValue) }
+        if ((!this.dirtyForm || this.mounted) && typeof get(v.data, path) === 'undefined') return { ...v, data: set(v.data, path, initialValue) }
         return v
       })
     }
