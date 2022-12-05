@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getContext } from 'svelte'
-  import { isNotBlank } from 'txstate-utils'
+  import { isNotBlank, isPracticallyEmpty } from 'txstate-utils'
   import { FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { FormStore } from './FormStore'
   import SubForm from './SubForm.svelte'
@@ -73,12 +73,13 @@
   export let maxedText = addMoreText
   export let maxLength = Infinity
   export let conditional: boolean|undefined = undefined
+  export let isEmpty = isPracticallyEmpty
 
   const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
   const pathToArray = [inheritedPath, path].filter(isNotBlank).join('.')
 
   const store = getContext<FormStore>(FORM_CONTEXT)
-  store.registerArray(pathToArray, initialState, minLength)
+  store.registerArray(pathToArray, initialState, minLength, isEmpty)
   const arr = store.getField<T[]>(pathToArray)
   const reactToArr = (..._: any) => { if ($arr == null) store.setField(pathToArray, []) }
   $: reactToArr($arr)

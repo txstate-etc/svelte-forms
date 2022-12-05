@@ -57,6 +57,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   dirtyForm: boolean
   submitPromise?: Promise<SubmitResponse<StateType>>
   mounted?: boolean
+  isEmptyMap = new Map<string, (data: any) => boolean>()
 
   constructor (
     private submitFn: (data: Partial<StateType>) => Promise<SubmitResponse<StateType>>,
@@ -209,7 +210,8 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     }
   }
 
-  registerArray (path: string, initialState: any, minLength: number) {
+  registerArray (path: string, initialState: any, minLength: number, isEmpty: (data: any) => boolean) {
+    this.isEmptyMap.set(path, isEmpty)
     this.update(v => {
       const val = [...(get<any[]>(v.data, path) ?? [])]
       for (let i = val.length; i < minLength; i++) val.push(initialState)
@@ -247,10 +249,18 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     }, 300)
   }
 
+  private prepForSubmit (data: Partial<StateType>) {
+    for (const [path, isEmpty] of this.isEmptyMap.entries()) {
+      const v = get(data, path)
+      data = set(data, path, Array.isArray(v) ? v.filter(itm => !isEmpty(itm)) : v)
+    }
+    return data
+  }
+
   private async validate () {
     if (!this.validateFn) return
     const saveVersion = ++this.validateVersion
-    const newMessages = await this.validateFn(this.value.data)
+    const newMessages = await this.validateFn(this.prepForSubmit(this.value.data))
     if (this.validateVersion === saveVersion) {
       this.dirtyNextTick()
       this.update(v => ({ ...v, validating: false, messages: { ...v.messages, all: newMessages } }))
@@ -258,7 +268,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   async submit () {
-    this.submitPromise ??= this.submitFn(this.value.data)
+    this.submitPromise ??= this.submitFn(this.prepForSubmit(this.value.data))
     try {
       this.update(v => ({ ...v, submitting: true }))
       const resp = await this.submitPromise
