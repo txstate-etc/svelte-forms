@@ -52,6 +52,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   validationTimer?: NodeJS.Timeout
   validateVersion: number
   fields: Map<string, number>
+  finalizes: Map<string, (value: any) => any>
   dirtyFields: Map<string, boolean>
   dirtyFieldsNextTick: Map<string, boolean>
   dirtyForm: boolean
@@ -66,6 +67,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     super(initialState)
     this.validateVersion = 0
     this.fields = new Map()
+    this.finalizes = new Map()
     this.reset()
   }
 
@@ -76,7 +78,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       if (m.path && messageIsError(m)) validField[m.path] = 'invalid'
     }
     state.messages.fields = state.messages.all.filter(m => m.path).reduce((acc, curr) => {
-      if (this.dirtyForm || this.dirtyFields.get(curr.path)) {
+      if (curr.path && (this.dirtyForm || this.dirtyFields.get(curr.path))) {
         acc[curr.path] ??= []
         acc[curr.path].push(curr)
       }
@@ -131,6 +133,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   dirtyField (path: string) {
     if (this.fields.has(path)) {
       const dirtyIndex = this.fields.get(path)
+      if (!dirtyIndex) return
       for (const [key, idx] of this.fields) {
         if (idx <= dirtyIndex) this.dirtyFieldsNextTick.set(key, true)
       }
@@ -189,22 +192,25 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   getFieldValid (path: string) {
-    return derivedStore(this, state => (this.dirtyFields.get(path) || this.dirtyForm) ? state.validField[path] : undefined)
+    return derivedStore(this, state => (!!this.dirtyFields.get(path) || this.dirtyForm) ? state.validField[path] : undefined)
   }
 
-  registerField (path: string, initialValue: any, conditional?: boolean) {
+  registerField (path: string, initialValue: any, conditional?: boolean, finalize?: (value: any) => any) {
     if (typeof initialValue !== 'undefined') {
       this.update(v => {
-        if ((!this.dirtyForm || this.mounted || !conditional) && get(v.data, path) == null) return { ...v, data: set(v.data, path, initialValue) }
+        if ((!this.dirtyForm || !!this.mounted || !conditional) && get(v.data, path) == null) return { ...v, data: set(v.data, path, initialValue) }
         return v
       })
     }
     this.fields.set(path, this.fields.size)
+    if (finalize) this.finalizes.set(path, finalize)
   }
 
   unregisterField (path: string) {
     const deletedidx = this.fields.get(path)
+    if (!deletedidx) return
     this.fields.delete(path)
+    this.finalizes.delete(path)
     for (const [key, idx] of this.fields) {
       if (idx > deletedidx) this.fields.set(key, idx - 1)
     }
@@ -227,7 +233,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.fields = new Map()
     while (nodeIterator.nextNode()) {
       const comment = nodeIterator.referenceNode.nodeValue
-      const m = comment.match(/svelte-forms\((.*?)\)/i)
+      const m = comment?.match(/svelte-forms\((.*?)\)/i)
       if (m?.[1]) {
         const path = m[1]
         this.fields.set(path, this.fields.size)
@@ -260,16 +266,25 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   private async validate () {
     if (!this.validateFn) return
     const saveVersion = ++this.validateVersion
-    const newMessages = await this.validateFn(this.prepForSubmit(this.value.data))
+    const data = await this.finalize(this.value.data)
+    const newMessages = await this.validateFn(this.prepForSubmit(data))
     if (this.validateVersion === saveVersion) {
       this.dirtyNextTick()
       this.update(v => ({ ...v, validating: false, messages: { ...v.messages, all: newMessages } }))
     }
   }
 
+  private async finalize (data: any) {
+    await Promise.all(Array.from(this.finalizes.entries()).map(async ([path, cb]) => {
+      data = set(data, path, await cb(get(data, path)))
+    }))
+    return data
+  }
+
   async submit () {
-    this.submitPromise ??= this.submitFn(this.prepForSubmit(this.value.data))
     try {
+      const data = await this.finalize(this.value.data)
+      this.submitPromise ??= this.submitFn(this.prepForSubmit(data))
       this.update(v => ({ ...v, submitting: true }))
       const resp = await this.submitPromise
       this.dirtyForm = true

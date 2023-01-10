@@ -23,7 +23,7 @@
   const obj = store.getField<T>(finalPath)
 
   setContext(FORM_INHERITED_PATH, finalPath)
-  let lastConditional = true
+  let lastConditional: boolean | undefined = true
   function handleConditionalData (..._: any) {
     if (!conditional && lastConditional) {
       store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: $obj } }))

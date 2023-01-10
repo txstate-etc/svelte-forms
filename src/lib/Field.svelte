@@ -30,6 +30,7 @@
   export let boolean = false
   export let serialize: ((value: any) => string)|undefined = undefined
   export let deserialize: ((value: string) => any)|undefined = undefined
+  export let finalize: ((value: any) => any)|undefined = undefined
   export let conditional: boolean | undefined = true
   $: finalSerialize = (serialize ?? (number
     ? numberSerialize
@@ -53,7 +54,7 @@
   const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
 
   const store = getContext<FormStore>(FORM_CONTEXT)
-  store.registerField(finalPath, defaultValue, conditional)
+  store.registerField(finalPath, defaultValue, conditional, finalize)
 
   const val = store.getField<T>(finalPath)
   const messages = store.getFeedback(finalPath)
@@ -91,7 +92,7 @@
     store.unregisterField(finalPath)
   })
 
-  let lastConditional = true
+  let lastConditional: boolean | undefined = true
   function handleConditionalData (..._: any) {
     if (!conditional && lastConditional) {
       store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: $val } }))

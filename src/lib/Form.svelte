@@ -26,12 +26,12 @@
 
   let className = ''
   export { className as class }
-  export let submit: (state: T) => Promise<SubmitResponse<T>> = undefined
-  export let validate: (state: T) => Promise<Feedback[]> = undefined
+  export let submit: ((state: T) => Promise<SubmitResponse<T>>) | undefined = undefined
+  export let validate: ((state: T) => Promise<Feedback[]>) | undefined = undefined
   export let autocomplete: string|undefined = undefined
   export let name: string|undefined = undefined
-  export let store = new FormStore<T>(submit, validate)
-  export let preload: T = undefined
+  export let store = new FormStore<T>(submit!, validate)
+  export let preload: T | undefined = undefined
   if (preload != null) store.setData(preload)
   setContext(FORM_CONTEXT, store)
 
