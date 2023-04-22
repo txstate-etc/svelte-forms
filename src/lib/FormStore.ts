@@ -49,7 +49,7 @@ function setPathValid (validField: Record<string, ValidState>, path: string) {
 
 const initialState = { data: {}, conditionalData: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, showingInlineErrors: false, validating: false, submitting: false, saved: false, dirty: undefined, width: 800 }
 export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
-  validationTimer?: NodeJS.Timeout
+  validationTimer?: number
   validateVersion: number
   fields: Map<string, number>
   finalizes: Map<string, (value: any) => any>

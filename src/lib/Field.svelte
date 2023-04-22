@@ -1,11 +1,11 @@
 <script lang="ts">
   import { getContext, onDestroy } from 'svelte'
   import { isNotBlank } from 'txstate-utils'
-  import { type Feedback, FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
-  import type { FormStore } from './FormStore'
+  import { FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
+  import type { Feedback, FormStore } from './FormStore'
   import { booleanDeserialize, booleanNullableDeserialize, booleanSerialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, defaultDeserialize, defaultSerialize, nullableDeserialize, nullableSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from './util'
 
-  type T = $$Generic<object|string|number|boolean|Date>
+  type T = $$Generic<object|string|number|boolean|Date|undefined>
   interface $$Slots {
     default: {
       path: string
