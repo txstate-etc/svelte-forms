@@ -133,7 +133,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   dirtyField (path: string) {
     if (this.fields.has(path)) {
       const dirtyIndex = this.fields.get(path)
-      if (!dirtyIndex) return
+      if (dirtyIndex == null) return
       for (const [key, idx] of this.fields) {
         if (idx <= dirtyIndex) this.dirtyFieldsNextTick.set(key, true)
       }
