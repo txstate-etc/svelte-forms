@@ -68,6 +68,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     super(initialState)
     this.validateVersion = 0
     this.fields = new Map()
+    this.initializes = new Map()
     this.finalizes = new Map()
     this.reset()
   }
