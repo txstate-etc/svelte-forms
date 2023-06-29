@@ -52,6 +52,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   validationTimer?: number
   validateVersion: number
   fields: Map<string, number>
+  initialized: Set<string>
   initializes: Map<string, (value: any) => any>
   finalizes: Map<string, (value: any) => any>
   dirtyFields: Map<string, boolean>
@@ -68,6 +69,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     super(initialState)
     this.validateVersion = 0
     this.fields = new Map()
+    this.initialized = new Set()
     this.initializes = new Map()
     this.finalizes = new Map()
     this.reset()
@@ -112,7 +114,11 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.triggerValidation()
   }
 
-  setField (path: string, val: any) {
+  async setField (path: string, val: any, opts?: { initialize?: boolean }) {
+    if (opts?.initialize && this.initializes.has(path) && !this.initialized.has(path)) {
+      this.initialized.add(path)
+      val = await this.initializes.get(path)!(val)
+    }
     let wasDifferent = false
     this.update(v => {
       const curr = get(v.data, path)
@@ -202,16 +208,25 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     return derivedStore(this, state => (!!this.dirtyFields.get(path) || this.dirtyForm) ? state.validField[path] : undefined)
   }
 
-  registerField (path: string, initialValue: any, conditional?: boolean, initialize?: (value: any) => any, finalize?: (value: any) => any) {
-    if (typeof initialValue !== 'undefined') {
-      this.update(v => {
-        if ((!this.dirtyForm || !!this.mounted || !conditional) && get(v.data, path) == null) return { ...v, data: set(v.data, path, initialValue) }
-        return v
-      })
-    }
+  async registerField (path: string, initialValue: any, conditional?: boolean, initialize?: (value: any) => any, finalize?: (value: any) => any) {
     this.fields.set(path, this.fields.size)
     if (initialize) this.initializes.set(path, initialize)
     if (finalize) this.finalizes.set(path, finalize)
+    if (typeof initialValue !== 'undefined') {
+      if (!this.dirtyForm || !!this.mounted || !conditional) {
+        const initialized = await initialize?.(initialValue) ?? initialValue
+        this.update(v => {
+          if (!conditional && get(v.data, path) == null) {
+            this.initialized.add(path)
+            return { ...v, data: set(v.data, path, initialized) }
+          }
+          return v
+        })
+      }
+    }
+    if (this.dirtyForm && initialize && !this.initialized.has(path)) {
+      await this.setField(path, get(this.value.data, path), { initialize: true })
+    }
   }
 
   unregisterField (path: string) {
@@ -219,6 +234,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     if (!deletedidx) return
     this.fields.delete(path)
     this.finalizes.delete(path)
+    this.initializes.delete(path)
     for (const [key, idx] of this.fields) {
       if (idx > deletedidx) this.fields.set(key, idx - 1)
     }
@@ -283,8 +299,10 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   private async initialize (data: any) {
+    this.initialized.clear()
     await Promise.all(Array.from(this.initializes.entries()).map(async ([path, cb]) => {
       data = set(data, path, await cb(get(data, path)))
+      this.initialized.add(path)
     }))
     return data
   }
