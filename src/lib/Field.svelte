@@ -13,7 +13,7 @@
       messages: Feedback[]
       valid: boolean
       invalid: boolean
-      setVal: (val: T) => void
+      setVal: (val: T, notDirty?: boolean) => void
       onChange: (e?: any) => void
       onBlur: () => void
       serialize: (value: any) => string
@@ -64,10 +64,10 @@
   $: invalid = $fieldValid === 'invalid'
   $: valid = $fieldValid === 'valid'
 
-  function setVal (v: T|((v: T) => T)) {
+  function setVal (v: T|((v: T) => T), notDirty?: boolean) {
     if (typeof v === 'function') v = v($val)
     store.setField(finalPath, v)
-    store.dirtyField(finalPath)
+    if (!notDirty) store.dirtyField(finalPath)
   }
 
   function onChange (e: any) {
