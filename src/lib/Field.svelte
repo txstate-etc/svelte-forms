@@ -31,7 +31,7 @@
   export let serialize: ((value: any) => string)|undefined = undefined
   export let deserialize: ((value: string) => any)|undefined = undefined
   export let initialize: ((value: any) => any)|undefined = undefined
-  export let finalize: ((value: any) => any)|undefined = undefined
+  export let finalize: ((value: any, isSubmit: boolean) => any)|undefined = undefined
   export let conditional: boolean | undefined = true
   $: finalSerialize = (serialize ?? (number
     ? numberSerialize

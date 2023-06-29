@@ -54,7 +54,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   fields: Map<string, number>
   initialized: Set<string>
   initializes: Map<string, (value: any) => any>
-  finalizes: Map<string, (value: any) => any>
+  finalizes: Map<string, (value: any, isSubmit?: boolean) => any>
   dirtyFields: Map<string, boolean>
   dirtyFieldsNextTick: Map<string, boolean>
   dirtyForm: boolean
@@ -208,7 +208,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     return derivedStore(this, state => (!!this.dirtyFields.get(path) || this.dirtyForm) ? state.validField[path] : undefined)
   }
 
-  async registerField (path: string, initialValue: any, conditional?: boolean, initialize?: (value: any) => any, finalize?: (value: any) => any) {
+  async registerField (path: string, initialValue: any, conditional?: boolean, initialize?: (value: any) => any, finalize?: (value: any, isSubmit: boolean) => any) {
     this.fields.set(path, this.fields.size)
     if (initialize) this.initializes.set(path, initialize)
     if (finalize) this.finalizes.set(path, finalize)
@@ -290,7 +290,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   private async validate () {
     if (!this.validateFn) return
     const saveVersion = ++this.validateVersion
-    const data = await this.finalize(this.value.data)
+    const data = await this.finalize(this.value.data, false)
     const newMessages = await this.validateFn(this.prepForSubmit(data))
     if (this.validateVersion === saveVersion) {
       this.dirtyNextTick()
@@ -307,16 +307,16 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     return data
   }
 
-  private async finalize (data: any) {
+  private async finalize (data: any, isSubmit: boolean) {
     await Promise.all(Array.from(this.finalizes.entries()).map(async ([path, cb]) => {
-      data = set(data, path, await cb(get(data, path)))
+      data = set(data, path, await cb(get(data, path), isSubmit))
     }))
     return data
   }
 
   async submit () {
     try {
-      const data = await this.finalize(this.value.data)
+      const data = await this.finalize(this.value.data, true)
       this.submitPromise ??= this.submitFn(this.prepForSubmit(data))
       this.update(v => ({ ...v, submitting: true }))
       const resp = await this.submitPromise
