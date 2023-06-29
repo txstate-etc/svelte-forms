@@ -32,7 +32,7 @@
   export let name: string|undefined = undefined
   export let store = new FormStore<T>(submit!, validate)
   export let preload: T | undefined = undefined
-  if (preload != null) store.setData(preload)
+  if (preload != null) store.setData(preload, true)
   setContext(FORM_CONTEXT, store)
 
   const dispatch = createEventDispatcher()
