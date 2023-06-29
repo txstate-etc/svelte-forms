@@ -108,8 +108,8 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
    * of coming from the database/API
    */
   async setData (data: StateType, skipInitialize?: boolean) {
-    const dataToSet = skipInitialize ? data : await this.initialize(data)
     this.dirtyForm = true
+    const dataToSet = skipInitialize ? data : await this.initialize(data)
     this.update(v => ({ ...v, data: dataToSet, conditionalData: {} }))
     this.triggerValidation()
   }
@@ -300,9 +300,9 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
 
   private async initialize (data: any) {
     this.initialized.clear()
+    for (const [path] of Array.from(this.initializes.keys())) this.initialized.add(path)
     await Promise.all(Array.from(this.initializes.entries()).map(async ([path, cb]) => {
       data = set(data, path, await cb(get(data, path)))
-      this.initialized.add(path)
     }))
     return data
   }
