@@ -52,6 +52,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   validationTimer?: number
   validateVersion: number
   fields: Map<string, number>
+  initializes: Map<string, (value: any) => any>
   finalizes: Map<string, (value: any) => any>
   dirtyFields: Map<string, boolean>
   dirtyFieldsNextTick: Map<string, boolean>
@@ -99,9 +100,14 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.set({ ...initialState, data: data ?? {} })
   }
 
-  setData (data: StateType) {
+  /**
+   * skipInitialize is meant for when the data was extracted from state instead
+   * of coming from the database/API
+   */
+  async setData (data: StateType, skipInitialize?: boolean) {
+    const dataToSet = skipInitialize ? data : await this.initialize(data)
     this.dirtyForm = true
-    this.update(v => ({ ...v, data, conditionalData: {} }))
+    this.update(v => ({ ...v, data: dataToSet, conditionalData: {} }))
     this.triggerValidation()
   }
 
@@ -195,7 +201,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     return derivedStore(this, state => (!!this.dirtyFields.get(path) || this.dirtyForm) ? state.validField[path] : undefined)
   }
 
-  registerField (path: string, initialValue: any, conditional?: boolean, finalize?: (value: any) => any) {
+  registerField (path: string, initialValue: any, conditional?: boolean, initialize?: (value: any) => any, finalize?: (value: any) => any) {
     if (typeof initialValue !== 'undefined') {
       this.update(v => {
         if ((!this.dirtyForm || !!this.mounted || !conditional) && get(v.data, path) == null) return { ...v, data: set(v.data, path, initialValue) }
@@ -203,6 +209,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       })
     }
     this.fields.set(path, this.fields.size)
+    if (initialize) this.initializes.set(path, initialize)
     if (finalize) this.finalizes.set(path, finalize)
   }
 
@@ -274,6 +281,13 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     }
   }
 
+  private async initialize (data: any) {
+    await Promise.all(Array.from(this.initializes.entries()).map(async ([path, cb]) => {
+      data = set(data, path, await cb(get(data, path)))
+    }))
+    return data
+  }
+
   private async finalize (data: any) {
     await Promise.all(Array.from(this.finalizes.entries()).map(async ([path, cb]) => {
       data = set(data, path, await cb(get(data, path)))
@@ -287,8 +301,9 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       this.submitPromise ??= this.submitFn(this.prepForSubmit(data))
       this.update(v => ({ ...v, submitting: true }))
       const resp = await this.submitPromise
+      const respData = await this.initialize(resp.data)
       this.dirtyForm = true
-      this.update(v => ({ ...v, data: resp.data, saved: resp.success, messages: { ...v.messages, all: resp.messages } }))
+      this.update(v => ({ ...v, data: respData, saved: resp.success, messages: { ...v.messages, all: resp.messages } }))
       return resp
     } catch (e) {
       const messages: Feedback[] = [{

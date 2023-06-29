@@ -30,6 +30,7 @@
   export let boolean = false
   export let serialize: ((value: any) => string)|undefined = undefined
   export let deserialize: ((value: string) => any)|undefined = undefined
+  export let initialize: ((value: any) => any)|undefined = undefined
   export let finalize: ((value: any) => any)|undefined = undefined
   export let conditional: boolean | undefined = true
   $: finalSerialize = (serialize ?? (number
@@ -54,7 +55,7 @@
   const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
 
   const store = getContext<FormStore>(FORM_CONTEXT)
-  store.registerField(finalPath, defaultValue, conditional, finalize)
+  store.registerField(finalPath, defaultValue, conditional, initialize, finalize)
 
   const val = store.getField<T>(finalPath)
   const messages = store.getFeedback(finalPath)
