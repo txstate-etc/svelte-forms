@@ -208,23 +208,20 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     return derivedStore(this, state => (!!this.dirtyFields.get(path) || this.dirtyForm) ? state.validField[path] : undefined)
   }
 
-  async registerField (path: string, initialValue: any, conditional?: boolean, initialize?: (value: any) => any, finalize?: (value: any, isSubmit: boolean) => any) {
+  async registerField (path: string, initialValue: any, initialize?: (value: any) => any, finalize?: (value: any, isSubmit: boolean) => any) {
     this.fields.set(path, this.fields.size)
     if (initialize) this.initializes.set(path, initialize)
     if (finalize) this.finalizes.set(path, finalize)
-    if (typeof initialValue !== 'undefined') {
-      if (!this.dirtyForm || !!this.mounted || !conditional) {
-        const initialized = await initialize?.(initialValue) ?? initialValue
-        this.update(v => {
-          if (!conditional && get(v.data, path) == null) {
-            this.initialized.add(path)
-            return { ...v, data: set(v.data, path, initialized) }
-          }
-          return v
-        })
-      }
-    }
-    if (this.dirtyForm && initialize && !this.initialized.has(path)) {
+    if (initialValue != null && !this.dirtyForm && get(this.value.data, path) == null) {
+      const initialized = await initialize?.(initialValue) ?? initialValue
+      this.update(v => {
+        if (initialized != null && !this.dirtyForm && get(v.data, path) == null) {
+          this.initialized.add(path)
+          return { ...v, data: set(v.data, path, initialized) }
+        }
+        return v
+      })
+    } else if (this.dirtyForm && initialize && !this.initialized.has(path)) {
       await this.setField(path, get(this.value.data, path), { initialize: true })
     }
   }

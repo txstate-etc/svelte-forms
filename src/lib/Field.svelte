@@ -55,7 +55,7 @@
   const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
 
   const store = getContext<FormStore>(FORM_CONTEXT)
-  store.registerField(finalPath, defaultValue, conditional, initialize, finalize)
+  const registerFieldPromise = store.registerField(finalPath, defaultValue, initialize, finalize)
 
   const val = store.getField<T>(finalPath)
   const messages = store.getFeedback(finalPath)
@@ -94,7 +94,8 @@
   })
 
   let lastConditional: boolean | undefined = true
-  function handleConditionalData (..._: any) {
+  async function handleConditionalData (..._: any) {
+    await registerFieldPromise
     if (!conditional && lastConditional) {
       store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: $val } }))
       store.setField(finalPath, undefined)
