@@ -76,3 +76,7 @@ export function booleanNullableDeserialize (b?: string) {
   if (isBlank(b)) return undefined
   return b === 'true'
 }
+
+export function arraySerialize (v: any) {
+  return v == null ? [] : v
+}
