@@ -80,7 +80,14 @@
       </AddMore>
     </fieldset>
   </SubForm>
-
+  <fieldset>
+    <legend>Tasks:</legend>
+    <AddMore path="tasks" initialState={ (index) => { return { task: `Eat ${index + 1} cookie${index > 1 ? 's' : ''}!` } } } minLength={3}>
+      <Field path="task" let:path let:value let:onChange let:onBlur let:messages let:invalid>
+        <input type="text" name={path} {value} class:invalid on:change={onChange} on:keyup={onChange} on:blur={onBlur}><br>
+      </Field>
+    </AddMore>
+  </fieldset>
   {#if saved}Save successful!{/if}
   <br>
   <button disabled={submitting || invalid}>Submit</button>

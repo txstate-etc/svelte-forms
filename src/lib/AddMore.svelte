@@ -70,7 +70,7 @@
   }
 
   export let path: string
-  export let initialState: T | undefined = undefined
+  export let initialState: T | ((index: number) => T) | undefined = undefined
   export let addMoreText: string = '+ Add'
   export let addMoreClass: string = ''
   export let minLength = 0
@@ -89,7 +89,8 @@
   $: reactToArr($arr)
 
   function onClick () {
-    if (!maxed) store.push(pathToArray, initialState)
+    const state = (initialState instanceof Function) ? initialState($arr.length) : initialState
+    if (!maxed) store.push(pathToArray, state)
   }
 
   function remove (idx: number) {

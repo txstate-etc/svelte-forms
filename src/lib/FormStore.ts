@@ -241,7 +241,10 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.isEmptyMap.set(path, isEmpty)
     this.update(v => {
       const val = [...(get<any[]>(v.data, path) ?? [])]
-      for (let i = val.length; i < minLength; i++) val.push(initialState)
+      for (let i = val.length; i < minLength; i++) {
+        const state = (initialState instanceof Function) ? initialState(i) : initialState
+        val.push(state)
+      }
       return { ...v, data: set(v.data, path, val) }
     })
   }
