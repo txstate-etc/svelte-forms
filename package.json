@@ -4,7 +4,9 @@
   "scripts": {
     "prepublishOnly": "svelte-package",
     "dev": "vite dev",
+    "build": "vite build",
     "package": "svelte-package",
+    "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "eslint --ignore-path .gitignore ."
