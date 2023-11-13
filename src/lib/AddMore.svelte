@@ -85,7 +85,12 @@
   const store = getContext<FormStore>(FORM_CONTEXT)
   store.registerArray(pathToArray, initialState, minLength, isEmpty)
   const arr = store.getField<T[]>(pathToArray)
-  const reactToArr = (..._: any) => { if ($arr == null) store.setField(pathToArray, []) }
+  const reactToArr = (..._: any) => {
+    if ($arr == null) store.setField(pathToArray, [])
+    else if ($arr.length < minLength) {
+      store.registerArray(pathToArray, initialState, minLength, isEmpty)
+    }
+  }
   $: reactToArr($arr)
 
   function onClick () {
