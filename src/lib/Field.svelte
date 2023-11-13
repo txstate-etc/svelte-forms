@@ -5,7 +5,7 @@
   import type { Feedback, FormStore } from './FormStore'
   import { booleanDeserialize, booleanNullableDeserialize, booleanSerialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, defaultDeserialize, defaultSerialize, nullableDeserialize, nullableSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from './util'
 
-  type T = $$Generic<object|string|number|boolean|Date|undefined>
+  type T = $$Generic<object | string | number | boolean | Date | undefined>
   interface $$Slots {
     default: {
       path: string
@@ -28,10 +28,10 @@
   export let date = false
   export let datetime = false
   export let boolean = false
-  export let serialize: ((value: any) => string)|undefined = undefined
-  export let deserialize: ((value: string) => any)|undefined = undefined
-  export let initialize: ((value: any) => any)|undefined = undefined
-  export let finalize: ((value: any, isSubmit: boolean) => any)|undefined = undefined
+  export let serialize: ((value: any) => string) | undefined = undefined
+  export let deserialize: ((value: string) => any) | undefined = undefined
+  export let initialize: ((value: any) => any) | undefined = undefined
+  export let finalize: ((value: any, isSubmit: boolean) => any) | undefined = undefined
   export let conditional: boolean | undefined = true
   $: finalSerialize = (serialize ?? (number
     ? numberSerialize
@@ -65,9 +65,9 @@
   $: invalid = $fieldValid === 'invalid'
   $: valid = $fieldValid === 'valid'
 
-  function setVal (v: T|((v: T) => T), notDirty?: boolean) {
+  function setVal (v: T | ((v: T) => T), notDirty?: boolean) {
     if (typeof v === 'function') v = v($val)
-    store.setField(finalPath, v)
+    store.setField(finalPath, v).catch(console.error)
     if (!notDirty) store.dirtyField(finalPath)
   }
 
@@ -98,18 +98,18 @@
     await registerFieldPromise
     if (!conditional && lastConditional) {
       store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: $val } }))
-      store.setField(finalPath, undefined)
+      store.setField(finalPath, undefined).catch(console.error)
     } else if (conditional && !lastConditional) {
-      store.setField(finalPath, $store.conditionalData[finalPath])
+      store.setField(finalPath, $store.conditionalData[finalPath]).catch(console.error)
       store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: undefined } }))
     }
     lastConditional = conditional
   }
 
-  $: handleConditionalData(conditional)
+  $: handleConditionalData(conditional).catch(console.error)
 </script>
 
 {@html '<!-- svelte-forms(' + finalPath + ') -->'}
-{#if conditional !== false}
+{#if conditional}
   <slot path={finalPath} value={resolvedVal} messages={$messages} {valid} {invalid} {setVal} {onChange} {onBlur} serialize={finalSerialize} deserialize={finalDeserialize} />
 {/if}

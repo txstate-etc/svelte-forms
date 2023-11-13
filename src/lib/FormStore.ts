@@ -60,6 +60,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   dirtyForm: boolean
   submitPromise?: Promise<SubmitResponse<StateType>>
   mounted?: boolean
+  needsValidation?: boolean
   isEmptyMap = new Map<string, (data: any) => boolean>()
 
   constructor (
@@ -271,7 +272,16 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     }
   }
 
+  public mount () {
+    this.mounted = true
+    if (this.needsValidation) this.triggerValidation()
+  }
+
   private triggerValidation () {
+    if (!this.mounted) {
+      this.needsValidation = true
+      return
+    }
     this.update(v => ({ ...v, saved: false, validating: true }))
     clearTimeout(this.validationTimer)
     this.validationTimer = setTimeout(() => {

@@ -28,13 +28,13 @@
   export { className as class }
   export let submit: ((state: T) => Promise<SubmitResponse<T>>) | undefined = undefined
   export let validate: ((state: T) => Promise<Feedback[]>) | undefined = undefined
-  export let autocomplete: string|undefined = undefined
-  export let name: string|undefined = undefined
+  export let autocomplete: string | undefined = undefined
+  export let name: string | undefined = undefined
   export let store = new FormStore<T>(submit!, validate)
   export let preload: T | undefined = undefined
   if (preload != null) {
     store.initialized.clear()
-    store.setData(preload, true)
+    store.setData(preload, true).catch(console.error)
   }
   setContext(FORM_CONTEXT, store)
 
@@ -47,15 +47,15 @@
 
   let form: HTMLFormElement
   onMount(() => {
-    store.mounted = true
-    const mutationobserver = new MutationObserver(() => store.reorderFields(form))
+    store.mount()
+    const mutationobserver = new MutationObserver(() => { store.reorderFields(form) })
     mutationobserver.observe(form, {
       subtree: true,
       childList: true,
       attributes: false,
       characterData: false
     })
-    return () => mutationobserver.disconnect()
+    return () => { mutationobserver.disconnect() }
   })
 </script>
 

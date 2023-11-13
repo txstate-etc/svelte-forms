@@ -76,7 +76,7 @@
   export let minLength = 0
   export let maxedText = addMoreText
   export let maxLength = Infinity
-  export let conditional: boolean|undefined = undefined
+  export let conditional: boolean | undefined = undefined
   export let isEmpty = isPracticallyEmpty
 
   const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
@@ -86,7 +86,7 @@
   store.registerArray(pathToArray, initialState, minLength, isEmpty)
   const arr = store.getField<T[]>(pathToArray)
   const reactToArr = (..._: any) => {
-    if ($arr == null) store.setField(pathToArray, [])
+    if ($arr == null) store.setField(pathToArray, []).catch(console.error)
     else if ($arr.length < minLength) {
       store.registerArray(pathToArray, initialState, minLength, isEmpty)
     }
@@ -103,7 +103,7 @@
   }
 
   function moveUp (idx: number) {
-    return () => store.moveUp(pathToArray, idx)
+    return () => { store.moveUp(pathToArray, idx) }
   }
 
   $: maxed = $arr?.length >= maxLength

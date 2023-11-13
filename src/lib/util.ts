@@ -41,7 +41,7 @@ export function defaultDeserialize (v: string) {
 }
 
 export function nullableSerialize (v: string) {
-  return v == null ? '' : v
+  return v ?? ''
 }
 
 export function nullableDeserialize (v: string) {
@@ -78,5 +78,5 @@ export function booleanNullableDeserialize (b?: string) {
 }
 
 export function arraySerialize (v: any) {
-  return v == null ? [] : v
+  return v ?? []
 }
