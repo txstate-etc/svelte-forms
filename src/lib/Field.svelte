@@ -9,7 +9,9 @@
   interface $$Slots {
     default: {
       path: string
+      finalPath: string
       value: any
+      rawValue: any
       messages: Feedback[]
       valid: boolean
       invalid: boolean
@@ -111,5 +113,5 @@
 
 {@html '<!-- svelte-forms(' + finalPath + ') -->'}
 {#if conditional}
-  <slot path={finalPath} value={resolvedVal} messages={$messages} {valid} {invalid} {setVal} {onChange} {onBlur} serialize={finalSerialize} deserialize={finalDeserialize} />
+  <slot path={finalPath} finalPath={finalPath} value={resolvedVal} rawValue={$val} messages={$messages} {valid} {invalid} {setVal} {onChange} {onBlur} serialize={finalSerialize} deserialize={finalDeserialize} />
 {/if}
