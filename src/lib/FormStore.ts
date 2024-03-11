@@ -127,6 +127,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       return { ...v, data: set(v.data, path, val) }
     })
     if (wasDifferent) this.triggerValidation()
+    return wasDifferent
   }
 
   /**

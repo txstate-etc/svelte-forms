@@ -69,8 +69,9 @@
 
   function setVal (v: T | ((v: T) => T), notDirty?: boolean) {
     if (typeof v === 'function') v = v($val)
-    store.setField(finalPath, v).catch(console.error)
-    if (!notDirty) store.dirtyField(finalPath)
+    store.setField(finalPath, v).then(wasDifferent => {
+      if (wasDifferent && !notDirty) store.dirtyField(finalPath)
+    }).catch(console.error)
   }
 
   function onChange (e: any) {
