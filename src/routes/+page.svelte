@@ -39,7 +39,7 @@
     </AddMore>
   </fieldset>
   <br>
-  <Field path="mydate" let:path let:value let:onChange serialize={dateSerialize} deserialize={dateDeserialize}>
+  <Field path="mydate" let:path let:value let:onChange date>
     <label for="mydate">Date with no time: </label>
     <input id="mydate" type="date" name={path} {value} on:change={onChange} on:keyup={onChange}>
     <div>Should place a Date object into store, noon on the specified date in the browser's time zone.</div>

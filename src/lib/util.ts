@@ -1,6 +1,7 @@
 import { dateToISOWithTZ, isBlank } from 'txstate-utils'
 
 function dtToJSON () {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   return dateToISOWithTZ(this)
 }
 
@@ -54,14 +55,12 @@ export function numberSerialize (n?: number) {
 
 export function numberDeserialize (v: string) {
   if (v === '') return 0
-  if (typeof v === 'string' && /^\d*\.$/.test(v)) return v
   const n = Number(v)
   return isNaN(n) ? 0 : n
 }
 
 export function numberNullableDeserialize (v?: string) {
   if (isBlank(v)) return undefined
-  if (typeof v === 'string' && /^\d*\.$/.test(v)) return v
   const n = Number(v)
   return isNaN(n) ? undefined : n
 }
