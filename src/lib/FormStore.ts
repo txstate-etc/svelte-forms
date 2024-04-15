@@ -5,7 +5,8 @@ export enum MessageType {
   ERROR = 'error',
   WARNING = 'warning',
   SUCCESS = 'success',
-  SYSTEM = 'system'
+  SYSTEM = 'system',
+  INFO = 'info'
 }
 
 export interface Feedback {
