@@ -4,7 +4,7 @@
   import { FormStore, FORM_CONTEXT } from '$lib/FormStore'
   import type { Feedback, SubmitResponse } from '$lib/FormStore'
 
-  type T = $$Generic<any>
+  type T = $$Generic<Record<string, any>>
 
   interface $$Events {
     saved: CustomEvent<T>
