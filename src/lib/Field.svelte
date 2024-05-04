@@ -42,7 +42,7 @@
       : date
         ? dateSerialize
         : boolean
-          ? (notNull ? booleanSerialize : booleanNullableDeserialize)
+          ? (notNull ? booleanSerialize : booleanNullableSerialize)
           : (notNull ? defaultSerialize : nullableSerialize))) as ((v: any) => string)
   $: finalDeserialize = (deserialize ?? (number
     ? (notNull ? numberDeserialize : numberNullableDeserialize)
@@ -51,7 +51,7 @@
       : date
         ? dateDeserialize
         : boolean
-          ? (notNull ? booleanDeserialize : booleanNullableSerialize)
+          ? (notNull ? booleanDeserialize : booleanNullableDeserialize)
           : (notNull ? defaultDeserialize : nullableDeserialize))) as ((v: string) => any)
   const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
   const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
