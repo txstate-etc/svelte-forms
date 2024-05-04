@@ -3,7 +3,7 @@
   import { isNotBlank } from 'txstate-utils'
   import { FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { Feedback, FormStore } from './FormStore'
-  import { booleanDeserialize, booleanNullableDeserialize, booleanSerialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, defaultDeserialize, defaultSerialize, nullableDeserialize, nullableSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from './util'
+  import { booleanDeserialize, booleanNullableDeserialize, booleanNullableSerialize, booleanSerialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, defaultDeserialize, defaultSerialize, nullableDeserialize, nullableSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from './util'
 
   type T = $$Generic<object | string | number | boolean | Date | undefined>
   interface $$Slots {
@@ -51,7 +51,7 @@
       : date
         ? dateDeserialize
         : boolean
-          ? (notNull ? booleanDeserialize : booleanNullableDeserialize)
+          ? (notNull ? booleanDeserialize : booleanNullableSerialize)
           : (notNull ? defaultDeserialize : nullableDeserialize))) as ((v: string) => any)
   const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
   const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
