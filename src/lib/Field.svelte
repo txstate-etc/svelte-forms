@@ -42,7 +42,7 @@
       : date
         ? dateSerialize
         : boolean
-          ? booleanSerialize
+          ? (notNull ? booleanSerialize : booleanNullableDeserialize)
           : (notNull ? defaultSerialize : nullableSerialize))) as ((v: any) => string)
   $: finalDeserialize = (deserialize ?? (number
     ? (notNull ? numberDeserialize : numberNullableDeserialize)
@@ -61,7 +61,7 @@
 
   const val = store.getField<T>(finalPath)
   const messages = store.getFeedback(finalPath)
-  $: resolvedVal = finalSerialize($val)
+  $: serializedVal = finalSerialize($val)
 
   const fieldValid = store.getFieldValid(finalPath)
   $: invalid = $fieldValid === 'invalid'
@@ -114,5 +114,5 @@
 
 {@html '<!-- svelte-forms(' + finalPath + ') -->'}
 {#if conditional}
-  <slot path={finalPath} finalPath={finalPath} value={resolvedVal} rawValue={$val} messages={$messages} {valid} {invalid} {setVal} {onChange} {onBlur} serialize={finalSerialize} deserialize={finalDeserialize} />
+  <slot path={finalPath} finalPath={finalPath} value={serializedVal} rawValue={$val} messages={$messages} {valid} {invalid} {setVal} {onChange} {onBlur} serialize={finalSerialize} deserialize={finalDeserialize} />
 {/if}

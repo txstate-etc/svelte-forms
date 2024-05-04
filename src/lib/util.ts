@@ -69,6 +69,10 @@ export function booleanSerialize (b?: boolean) {
   return String(!!b)
 }
 
+export function booleanNullableSerialize (b?: boolean) {
+  return b == null ? '' : String(!!b)
+}
+
 export function booleanDeserialize (b: string) {
   return b === 'true'
 }
