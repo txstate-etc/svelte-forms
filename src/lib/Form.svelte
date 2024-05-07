@@ -33,6 +33,8 @@
   export let name: string | undefined = undefined
   export let store = new FormStore<T>(submit!, validate)
   export let preload: T | undefined = undefined
+  export let formelement: HTMLFormElement | undefined = undefined
+
   if (preload != null) {
     store.initialized.clear()
     store.setData(preload, true).catch(console.error)
@@ -47,11 +49,10 @@
     else dispatch('validationfail')
   }
 
-  let form: HTMLFormElement
   onMount(() => {
     store.mount()
-    const mutationobserver = new MutationObserver(() => { store.reorderFields(form) })
-    mutationobserver.observe(form, {
+    const mutationobserver = new MutationObserver(() => { store.reorderFields(formelement!) })
+    mutationobserver.observe(formelement!, {
       subtree: true,
       childList: true,
       attributes: false,
@@ -61,6 +62,6 @@
   })
 </script>
 
-<form bind:this={form} {name} class={className} on:submit|preventDefault={onSubmit} use:eq={{ store }} {autocomplete}>
+<form bind:this={formelement} {name} class={className} on:submit|preventDefault={onSubmit} use:eq={{ store }} {autocomplete}>
   <slot messages={$store.messages.global} allMessages={$store.messages.all} saved={$store.saved} validating={$store.validating} submitting={$store.submitting} valid={$store.valid} invalid={$store.invalid} showingInlineErrors={$store.showingInlineErrors} data={$store.data} />
 </form>
