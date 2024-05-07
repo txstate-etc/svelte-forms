@@ -8,6 +8,7 @@
 
   interface $$Events {
     saved: CustomEvent<T>
+    validationfail: CustomEvent
   }
 
   interface $$Slots {
@@ -43,6 +44,7 @@
   async function onSubmit () {
     const resp = await store.submit()
     if (resp.success) dispatch('saved', resp.data)
+    else dispatch('validationfail')
   }
 
   let form: HTMLFormElement
