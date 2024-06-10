@@ -30,7 +30,7 @@ Use this component to start a new form. Each form has a goal of constructing a p
 ## Field
 This is the basic building block that represents the state of a single input field. It provides all the slot props you need to build an `<input>` inside it.
 ### Props
-* `path` - The path to this input's data in the JSON payload. If the Field is inside an `AddMore` or `SubForm` component, this path should be relative to the nearest one. For instance, the Field in `<SubForm path="nested"><Field path="name"></Field></SubForm>` maps to `payload.nested.name`.
+* `path` - The path to this input's data in the JSON payload. If the Field is inside an `AddMore`, `SubForm`, or `SubArray` component, this path should be relative to the nearest one. For instance, the Field in `<SubForm path="nested"><Field path="name"></Field></SubForm>` maps to `payload.nested.name`.
 * `defaultValue` - (optional) If desired, you may set an initial value to be loaded into an empty form payload. Provide the data type expected in the payload; if you are using serialize/deserialize functions there may be a type mismatch between the input element's value attribute and the payload data. Note that setting a `preload` will override any default values, even if the preload has an undefined or null value. This is because `preload` assumes that the user is editing a form that had previously been validly filled out in its entirety.
 * `serialize` - (optional) Provide a function that accepts data of the type expected in the JSON payload and converts it to the type expected by your slot content. This will frequently be used to convert a Date or number in the payload into a string for an `<input>` element. This library provides some, see documentation below.
 * `deserialize` - (optional) The reverse of serialize. Accept data from your slot and convert it to what you need in the payload. This will frequently be used to convert the string from an `<input>` element into something like a Date or number. This only has an effect if you use the `onChange` slot prop. If you use `setVal` instead, you are expected to do the type conversion before calling `setVal`.
@@ -71,10 +71,10 @@ interface Profile {
 }
 ```
 ### Props
-* `path` - The path to the array in the payload JSON. If inside another `SubForm` or `AddMore`, this path must be relative to that.
+* `path` - The path to the array in the payload JSON. If inside another `SubForm`, `SubArray`, or `AddMore`, this path must be relative to that.
 * `conditional` - (optional) see "Conditional vs Remove from DOM" below
 ### Default Slot Props
-* `path` - The full absolute path to this object in the payload, including the path of any `SubForm` or `AddMore` parents it might have.
+* `path` - The full absolute path to this object in the payload, including the path of any `SubForm`, `SubArray`, or `AddMore` parents it might have.
 * `value` - The part of the JSON payload that pertains to this. This will NOT have any serialization applied so be careful not to feed it directly to an input element. It's unlikely you will need this often.
 
 ## AddMore
@@ -101,7 +101,7 @@ interface Profile {
 }
 ```
 ### Props
-* `path` - The path to the array in the payload JSON. If inside another `SubForm` or `AddMore`, this path must be relative to that.
+* `path` - The path to the array in the payload JSON. If inside another `AddMore`, `SubForm`, or `SubArray`, this path must be relative to that.
 * `initialState` - (optional) The initial state of each new element in the array. Each time a new array element is added, it will be initialized with this JSON.
 * `startEmpty` - (optional) By default the form will initialize with one empty array element for the user to begin filling in, instead of forcing them to press the Add More button to add the first thing. Set this `true` to avoid this and force the user to add the first row intentially. Note that if you preload the form or call `setData` and the array as loaded is empty, it will NOT add this first element no matter what you set this prop to - the user will have to add a row intentionally.
 * `addMoreText` (optional) The text for the "Add More" button, if you'd like to customize it.
@@ -133,6 +133,29 @@ These slots are provided so you can add content above and below the array. The "
 * `maxLength` - Same as for the default slot.
 * `currentLength` - Same as for the default slot.
 
+## SubArray
+When you have an array of predetermined length, and you don't want users to be able to add and remove elements from the array, you can use the SubArray component. For example:
+```svelte
+<Form name="profile">
+  <Field path="fullname"> ... </Field>
+  <SubArray path="aliases">
+    Provide two aliases.
+    <Field path="0"><label>First Alias</label> ... </Field>
+    <Field path="1"><label>Second Alias</label> ... </Field>
+  </SubForm>
+</Form>
+```
+would create a payload with the following interface
+```typescript
+interface Profile {
+  fullname: string
+  aliases: [string, string]
+}
+```
+### Props
+* `path` - The path to the array in the payload JSON. If inside another `SubArray`, `SubForm`, or `AddMore`, this path must be relative to that.
+* `conditional` - (optional) see "Conditional vs Remove from DOM" below
+
 # Other Notes
 ## Serialize/Deserialize functions
 This library provides a bunch of serialize/deserialize functions to help you work with numbers, dates, and control how your payload handles `undefined` vs `''` empty string. Pass these function into the `Field` component's `serialize` and `deserialize` props, or write your own custom conversions.
@@ -151,7 +174,7 @@ When a field disappears from the DOM, there could be two reasons:
 1. The field is no longer an intended part of the form. Perhaps it is an obsolete field due to the way another field is filled out. In this case the data at its path should be deleted so that it doesn't accidentally appear in the final JSON payload.
 2. The field is inside a tabbed or paged form and it's on a non-current tab or page. In this case the data at its path should NOT be deleted as it is only hidden, but still good data.
 
-To help form creators distinguish these two cases from one another, there is a `conditional` prop on `Field`, `SubForm`, and `AddMore`. When you want to hide the form element because its data is irrelevant (e.g. if the user does not upload an image, I don't need to collect alt text), use this prop instead of using svelte `{#if}` blocks. It will remove the field from the DOM and also set the field value to undefined, effectively deleting it from the form data.
+To help form creators distinguish these two cases from one another, there is a `conditional` prop on `Field`, `SubForm`, `SubArray`, and `AddMore`. When you want to hide the form element because its data is irrelevant (e.g. if the user does not upload an image, I don't need to collect alt text), use this prop instead of using svelte `{#if}` blocks. It will remove the field from the DOM and also set the field value to undefined, effectively deleting it from the form data.
 
 When a conditional field is removed from the form, its data is deleted from the payload, but the data is automatically saved elsewhere in the FormStore. When the conditional field returns to the form, the data also returns as it was before removal. For instance, an image is added to a form, which activates the alt text field. The user adds alt text but then deletes the image. The alt text field disappears and the alt text is removed from the payload. Then the user changes their mind and re-uploads the image. The alt text field will re-appear and will contain the previously entered alt text.
 
