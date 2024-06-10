@@ -13,6 +13,7 @@ export interface Feedback {
   type: `${MessageType}`
   path?: string
   message: string
+  extra?: any
 }
 
 export interface SubmitResponse<StateType> {
