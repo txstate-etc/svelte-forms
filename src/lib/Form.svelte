@@ -22,6 +22,7 @@
       invalid: boolean
       showingInlineErrors: boolean
       data: Partial<T>
+      hasUnsavedChanges: boolean
     }
   }
 
@@ -35,10 +36,12 @@
   export let preload: T | undefined = undefined
   export let formelement: HTMLFormElement | undefined = undefined
 
-  if (preload != null) {
-    store.initialized.clear()
-    store.setData(preload, true).catch(console.error)
+  function reactToPreload (..._: any[]) {
+    if (!$store.hasUnsavedChanges) {
+      store.preload(preload).catch(console.error)
+    }
   }
+  $: reactToPreload(preload)
   setContext(FORM_CONTEXT, store)
 
   const dispatch = createEventDispatcher()
@@ -63,5 +66,5 @@
 </script>
 
 <form bind:this={formelement} {name} class={className} on:submit|preventDefault={onSubmit} use:eq={{ store }} {autocomplete}>
-  <slot messages={$store.messages.global} allMessages={$store.messages.all} saved={$store.saved} validating={$store.validating} submitting={$store.submitting} valid={$store.valid} invalid={$store.invalid} showingInlineErrors={$store.showingInlineErrors} data={$store.data} />
+  <slot messages={$store.messages.global} allMessages={$store.messages.all} saved={$store.saved} validating={$store.validating} submitting={$store.submitting} valid={$store.valid} invalid={$store.invalid} showingInlineErrors={$store.showingInlineErrors} data={$store.data} hasUnsavedChanges={$store.hasUnsavedChanges} />
 </form>

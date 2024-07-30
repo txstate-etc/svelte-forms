@@ -23,7 +23,7 @@
 
 <h1>Svelte Forms</h1>
 
-<Form {submit} {validate} let:saved let:submitting let:invalid let:data>
+<Form {submit} {validate} let:saved let:submitting let:invalid let:data let:hasUnsavedChanges>
   This is an example form.<br>
   <Field path="test" defaultValue='Sara' serialize={nullableSerialize} deserialize={nullableDeserialize} let:path let:value let:onChange>
     <input type="text" name={path} value={value} on:change={onChange}>
@@ -90,7 +90,7 @@
   </fieldset>
   {#if saved}Save successful!{/if}
   <br>
-  <button disabled={submitting || invalid}>Submit</button>
+  <button disabled={submitting || invalid || !hasUnsavedChanges}>Submit</button>
 
   <pre>{JSON.stringify(data, null, 2)}</pre>
 </Form>

@@ -1,5 +1,5 @@
 import { derivedStore, Store, subStore } from '@txstate-mws/svelte-store'
-import { get, set } from 'txstate-utils'
+import { equal, get, set } from 'txstate-utils'
 
 export enum MessageType {
   ERROR = 'error',
@@ -40,6 +40,7 @@ interface IFormStore<StateType> {
   submitting: boolean
   saved: boolean
   width: number
+  hasUnsavedChanges: boolean
 }
 
 const errorTypes = { [MessageType.ERROR]: true, [MessageType.SYSTEM]: true }
@@ -49,7 +50,7 @@ function setPathValid (validField: Record<string, ValidState>, path: string) {
   return validField
 }
 
-const initialState = { data: {}, conditionalData: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, showingInlineErrors: false, validating: false, submitting: false, saved: false, dirty: undefined, width: 800 }
+const initialState = { data: {}, conditionalData: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, showingInlineErrors: false, validating: false, submitting: false, saved: false, dirty: undefined, width: 800, hasUnsavedChanges: false }
 export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   validationTimer?: number
   validateVersion: number
@@ -64,6 +65,8 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   mounted?: boolean
   needsValidation?: boolean
   isEmptyMap = new Map<string, (data: any) => boolean>()
+  beforeUserChanges?: Partial<StateType>
+  hasPreload = true
 
   constructor (
     private submitFn: (data: Partial<StateType>) => Promise<SubmitResponse<StateType>>,
@@ -96,6 +99,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     state.invalid = invalid
     state.valid = !invalid
     state.showingInlineErrors = Object.values(state.messages.fields).some(msgs => msgs.some(messageIsError))
+    state.hasUnsavedChanges = this.beforeUserChanges != null && !equal(state.data, this.beforeUserChanges)
     super.set(state)
   }
 
@@ -103,14 +107,26 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.dirtyForm = false
     this.dirtyFields = new Map()
     this.dirtyFieldsNextTick = new Map()
+    this.beforeUserChanges = undefined
     this.set({ ...initialState, data: data ?? {} })
+  }
+
+  async preload (data: Partial<StateType> | undefined) {
+    this.initialized.clear()
+    this.beforeUserChanges = undefined
+    this.hasPreload = data != null
+    await this.setData(data ?? {}, !this.mounted)
+    setTimeout(() => {
+      this.beforeUserChanges ??= this.value.data
+      this.set(this.value) // this will cause state.hasUnsavedChanges to be re-evaluated
+    }, 10)
   }
 
   /**
    * skipInitialize is meant for when the data was extracted from state instead
    * of coming from the database/API
    */
-  async setData (data: StateType, skipInitialize?: boolean) {
+  async setData (data: Partial<StateType>, skipInitialize?: boolean) {
     this.dirtyForm = true
     const dataToSet = skipInitialize ? data : await this.initialize(data)
     this.update(v => ({ ...v, data: dataToSet, conditionalData: {} }))
@@ -335,7 +351,8 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       const resp = await this.submitPromise
       const respData = await this.initialize(resp.data)
       this.dirtyForm = true
-      this.update(v => ({ ...v, data: respData, saved: resp.success, messages: { ...v.messages, all: resp.messages } }))
+      this.update(v => ({ ...v, saved: resp.success, hasUnsavedChanges: resp.success ? false : v.hasUnsavedChanges, messages: { ...v.messages, all: resp.messages } }))
+      if (resp.success) await this.preload(respData)
       return resp
     } catch (e) {
       const messages: Feedback[] = [{
