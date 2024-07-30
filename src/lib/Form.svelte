@@ -44,6 +44,12 @@
   $: reactToPreload(preload)
   setContext(FORM_CONTEXT, store)
 
+  function reactToSubmitAndValidate (..._: any[]) {
+    if (submit) (store as any).submitFn = submit
+    if (validate) (store as any).validateFn = validate
+  }
+  $: reactToSubmitAndValidate(submit, validate)
+
   const dispatch = createEventDispatcher()
 
   async function onSubmit () {

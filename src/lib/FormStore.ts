@@ -69,8 +69,8 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   hasPreload = true
 
   constructor (
-    private submitFn: (data: Partial<StateType>) => Promise<SubmitResponse<StateType>>,
-    private validateFn?: (data: Partial<StateType>) => Promise<Feedback[]>
+    protected submitFn: (data: Partial<StateType>) => Promise<SubmitResponse<StateType>>,
+    protected validateFn?: (data: Partial<StateType>) => Promise<Feedback[]>
   ) {
     super(initialState)
     this.validateVersion = 0
