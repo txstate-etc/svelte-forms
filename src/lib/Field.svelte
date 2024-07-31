@@ -34,7 +34,7 @@
   export let deserialize: ((value: string) => any) | undefined = undefined
   export let initialize: ((value: any) => any) | undefined = undefined
   export let finalize: ((value: any, isSubmit: boolean) => any) | undefined = undefined
-  export let conditional: boolean | undefined = true
+  export let conditional = true
   $: finalSerialize = (serialize ?? (number
     ? numberSerialize
     : datetime
@@ -97,15 +97,17 @@
   })
 
   let lastConditional: boolean | undefined = true
+  let once = true
   async function handleConditionalData (..._: any) {
     await registerFieldPromise
     if (!conditional && lastConditional) {
-      store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: $val } }))
+      store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: once ? defaultValue : $val } }))
       store.setField(finalPath, undefined).catch(console.error)
     } else if (conditional && !lastConditional) {
       store.setField(finalPath, $store.conditionalData[finalPath]).catch(console.error)
       store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: undefined } }))
     }
+    once = false
     lastConditional = conditional
   }
 
