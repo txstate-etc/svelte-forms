@@ -66,7 +66,6 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   needsValidation?: boolean
   isEmptyMap = new Map<string, (data: any) => boolean>()
   beforeUserChanges?: Partial<StateType>
-  hasPreload = true
 
   constructor (
     protected submitFn: (data: Partial<StateType>) => Promise<SubmitResponse<StateType>>,
@@ -114,8 +113,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   async preload (data: Partial<StateType> | undefined) {
     this.initialized.clear()
     this.beforeUserChanges = undefined
-    this.hasPreload = data != null
-    await this.setData(data ?? {}, !this.mounted)
+    await this.setData(data ?? {}, !this.mounted, data == null)
     setTimeout(() => {
       this.beforeUserChanges ??= this.value.data
       this.set(this.value) // this will cause state.hasUnsavedChanges to be re-evaluated
@@ -126,8 +124,8 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
    * skipInitialize is meant for when the data was extracted from state instead
    * of coming from the database/API
    */
-  async setData (data: Partial<StateType>, skipInitialize?: boolean) {
-    this.dirtyForm = true
+  async setData (data: Partial<StateType>, skipInitialize?: boolean, skipDirtyForm?: boolean) {
+    if (!skipDirtyForm) this.dirtyForm = true
     const dataToSet = skipInitialize ? data : await this.initialize(data)
     this.update(v => ({ ...v, data: dataToSet, conditionalData: {} }))
     this.triggerValidation()
