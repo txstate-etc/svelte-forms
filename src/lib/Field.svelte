@@ -101,7 +101,7 @@
   async function handleConditionalData (..._: any) {
     await registerFieldPromise
     if (!conditional && lastConditional) {
-      store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: once ? defaultValue : $val } }))
+      store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: once ? ($val ?? defaultValue) : $val } }))
       store.setField(finalPath, undefined).catch(console.error)
     } else if (conditional && !lastConditional) {
       store.setField(finalPath, $store.conditionalData[finalPath]).catch(console.error)
