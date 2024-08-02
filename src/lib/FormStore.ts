@@ -107,6 +107,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.dirtyFields = new Map()
     this.dirtyFieldsNextTick = new Map()
     this.beforeUserChanges = undefined
+    clearTimeout(this.validationTimer)
     this.set({ ...initialState, data: data ?? {} })
   }
 
@@ -347,10 +348,9 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       this.submitPromise ??= this.submitFn(this.prepForSubmit(data))
       this.update(v => ({ ...v, submitting: true }))
       const resp = await this.submitPromise
-      const respData = await this.initialize(resp.data)
       this.dirtyForm = true
       this.update(v => ({ ...v, saved: resp.success, hasUnsavedChanges: resp.success ? false : v.hasUnsavedChanges, messages: { ...v.messages, all: resp.messages } }))
-      if (resp.success) await this.preload(respData)
+      if (resp.success) await this.preload(resp.data)
       return resp
     } catch (e) {
       const messages: Feedback[] = [{
