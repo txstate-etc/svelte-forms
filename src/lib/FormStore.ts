@@ -1,5 +1,5 @@
 import { derivedStore, Store, subStore } from '@txstate-mws/svelte-store'
-import { equal, get, set } from 'txstate-utils'
+import { equal, get, isEmpty, set } from 'txstate-utils'
 
 export enum MessageType {
   ERROR = 'error',
@@ -350,7 +350,10 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       const resp = await this.submitPromise
       this.dirtyForm = true
       this.update(v => ({ ...v, saved: resp.success, hasUnsavedChanges: resp.success ? false : v.hasUnsavedChanges, messages: { ...v.messages, all: resp.messages } }))
-      if (resp.success) await this.preload(resp.data)
+      if (resp.success) {
+        await this.preload(resp.data)
+        clearTimeout(this.validationTimer)
+      }
       return resp
     } catch (e) {
       const messages: Feedback[] = [{
