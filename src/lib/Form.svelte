@@ -67,7 +67,10 @@
       attributes: false,
       characterData: false
     })
-    return () => { mutationobserver.disconnect() }
+    return () => {
+      store.unmount()
+      mutationobserver.disconnect()
+    }
   })
 </script>
 

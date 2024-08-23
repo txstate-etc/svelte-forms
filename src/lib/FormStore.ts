@@ -290,6 +290,14 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     }
   }
 
+  public unmount () {
+    this.reset()
+    this.fields.clear()
+    this.initializes.clear()
+    this.finalizes.clear()
+    this.mounted = false
+  }
+
   public mount () {
     this.mounted = true
     if (this.needsValidation) this.triggerValidation()
