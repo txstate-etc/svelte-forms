@@ -1,11 +1,10 @@
-<script lang="ts">
+<script lang="ts" generics="T = any">
   import { getContext } from 'svelte'
   import { isNotBlank, isPracticallyEmpty } from 'txstate-utils'
   import { FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { FormStore } from './FormStore'
   import SubForm from './SubForm.svelte'
 
-  type T = $$Generic
   interface $$Slots {
     above: {
       path: string

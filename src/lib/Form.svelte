@@ -1,10 +1,8 @@
-<script lang="ts">
+<script lang="ts" generics="T = Record<string, any>">
   import { eq } from '@txstate-mws/svelte-components'
   import { createEventDispatcher, onMount, setContext } from 'svelte'
   import { FormStore, FORM_CONTEXT } from '$lib/FormStore'
   import type { Feedback, SubmitResponse } from '$lib/FormStore'
-
-  type T = $$Generic<Record<string, any>>
 
   interface $$Events {
     saved: CustomEvent<T>

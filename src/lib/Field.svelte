@@ -1,11 +1,10 @@
-<script lang="ts">
+<script lang="ts" generics="T = object | string | number | boolean | Date | undefined">
   import { getContext, onDestroy } from 'svelte'
   import { isNotBlank } from 'txstate-utils'
   import { FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { Feedback, FormStore } from './FormStore'
-  import { booleanDeserialize, booleanNullableDeserialize, booleanNullableSerialize, booleanSerialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, defaultDeserialize, defaultSerialize, nullableDeserialize, nullableSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from './util'
+  import { booleanDeserialize, booleanNullableDeserialize, booleanNullableSerialize, booleanSerialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, defaultDeserialize, defaultSerialize, jsonDeserialize, jsonSerialize, nullableDeserialize, nullableSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from './util'
 
-  type T = $$Generic<object | string | number | boolean | Date | undefined>
   interface $$Slots {
     default: {
       path: string
@@ -30,6 +29,7 @@
   export let date = false
   export let datetime = false
   export let boolean = false
+  export let json = false
   export let serialize: ((value: any) => string) | undefined = undefined
   export let deserialize: ((value: string) => any) | undefined = undefined
   export let initialize: ((value: any) => any) | undefined = undefined
@@ -37,22 +37,26 @@
   export let conditional = true
   $: finalSerialize = (serialize ?? (number
     ? numberSerialize
-    : datetime
-      ? datetimeSerialize
-      : date
-        ? dateSerialize
-        : boolean
-          ? (notNull ? booleanSerialize : booleanNullableSerialize)
-          : (notNull ? defaultSerialize : nullableSerialize))) as ((v: any) => string)
+    : json
+      ? jsonSerialize
+      : datetime
+        ? datetimeSerialize
+        : date
+          ? dateSerialize
+          : boolean
+            ? (notNull ? booleanSerialize : booleanNullableSerialize)
+            : (notNull ? defaultSerialize : nullableSerialize))) as ((v: any) => string)
   $: finalDeserialize = (deserialize ?? (number
     ? (notNull ? numberDeserialize : numberNullableDeserialize)
-    : datetime
-      ? datetimeDeserialize
-      : date
-        ? dateDeserialize
-        : boolean
-          ? (notNull ? booleanDeserialize : booleanNullableDeserialize)
-          : (notNull ? defaultDeserialize : nullableDeserialize))) as ((v: string) => any)
+    : json
+      ? jsonDeserialize
+      : datetime
+        ? datetimeDeserialize
+        : date
+          ? dateDeserialize
+          : boolean
+            ? (notNull ? booleanDeserialize : booleanNullableDeserialize)
+            : (notNull ? defaultDeserialize : nullableDeserialize))) as ((v: string) => any)
   const inheritedPath = getContext<string>(FORM_INHERITED_PATH)
   const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
 
@@ -68,7 +72,7 @@
   $: valid = $fieldValid === 'valid'
 
   function setVal (v: T | ((v: T) => T), notDirty?: boolean) {
-    if (typeof v === 'function') v = v($val)
+    if (typeof v === 'function') v = (v as (v: T) => T)($val)
     store.setField(finalPath, v).then(wasDifferent => {
       if (wasDifferent && !notDirty) store.dirtyField(finalPath)
     }).catch(console.error)

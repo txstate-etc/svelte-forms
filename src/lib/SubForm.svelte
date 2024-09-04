@@ -1,10 +1,8 @@
-<script lang="ts">
+<script lang="ts" generics="T = any">
   import { getContext, setContext } from 'svelte'
   import { isNotBlank } from 'txstate-utils'
   import { FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { FormStore } from './FormStore'
-
-  type T = $$Generic
 
   interface $$Slots {
     default: {

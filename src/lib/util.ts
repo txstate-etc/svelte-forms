@@ -1,4 +1,4 @@
-import { dateToISOWithTZ, isBlank } from 'txstate-utils'
+import { dateToISOWithTZ, isBlank, stringify } from 'txstate-utils'
 
 function dtToJSON () {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -84,4 +84,19 @@ export function booleanNullableDeserialize (b?: string) {
 
 export function arraySerialize (v: any) {
   return v ?? []
+}
+
+export function jsonSerialize (v: any) {
+  if (v == null) return ''
+  return stringify(v)
+}
+
+export function jsonDeserialize (v: string) {
+  if (!v?.length) return undefined
+  try {
+    return JSON.parse(v)
+  } catch (e) {
+    console.error(e)
+    return undefined
+  }
 }
