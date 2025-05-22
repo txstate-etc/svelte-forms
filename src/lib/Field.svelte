@@ -94,6 +94,7 @@
 
   function onBlur () {
     store.dirtyField(finalPath)
+    store.updateDirtyOnBlur()
   }
 
   onDestroy(() => {

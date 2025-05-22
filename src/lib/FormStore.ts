@@ -102,6 +102,16 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     super.set(state)
   }
 
+  updateDirtyOnBlur () {
+    // if we are already validating, we can just wait for that because it will
+    // trigger dirtyNextTick and update the state
+    if (!this.value.validating) {
+      // if we are not validating, we want to show errors on fields immediately as they lose focus
+      this.dirtyNextTick()
+      this.set({ ...this.value })
+    }
+  }
+
   reset (data?: StateType) {
     this.dirtyForm = false
     this.dirtyFields = new Map()
