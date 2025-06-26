@@ -1,12 +1,19 @@
 <script lang="ts" generics="T = Record<string, any>">
   import { eq } from '@txstate-mws/svelte-components'
   import { createEventDispatcher, onMount, setContext } from 'svelte'
+  import type { HTMLFormAttributes } from 'svelte/elements'
   import { FormStore, FORM_CONTEXT } from '$lib/FormStore'
-  import type { Feedback, SubmitResponse } from '$lib/FormStore'
+  import type { Feedback, FormStoreEvents, SubmitResponse } from '$lib/FormStore'
 
-  interface $$Events {
-    saved: CustomEvent<T>
-    validationfail: CustomEvent
+  type $$Events = FormStoreEvents<T>
+
+  interface $$Props extends HTMLFormAttributes {
+    submit?: (state: T) => Promise<SubmitResponse<T>>
+    validate?: (state: T) => Promise<Feedback[]>
+    autoSave?: boolean
+    preload?: T
+    store?: FormStore<T>
+    formelement?: HTMLFormElement
   }
 
   interface $$Slots {
@@ -24,37 +31,34 @@
     }
   }
 
-  let className = ''
-  export { className as class }
-  export let submit: ((state: T) => Promise<SubmitResponse<T>>) | undefined = undefined
-  export let validate: ((state: T) => Promise<Feedback[]>) | undefined = undefined
-  export let autocomplete: string | undefined = undefined
-  export let name: string | undefined = undefined
-  export let store = new FormStore<T>(submit!, validate)
+  export let submit: $$Props['submit'] | undefined = undefined
+  export let validate: $$Props['validate'] = undefined
+  export let autoSave = false
   export let preload: T | undefined = undefined
+  export let store = new FormStore<T>(submit!, validate)
   export let formelement: HTMLFormElement | undefined = undefined
 
+  const dispatch = createEventDispatcher()
+  function reactToSubmitAndValidate (..._: any[]) {
+    if (submit) (store as any).submitFn = submit
+    if (validate) (store as any).validateFn = validate
+    if (dispatch) (store as any).dispatch = dispatch
+    store.autoSave = autoSave
+  }
+  $: reactToSubmitAndValidate(submit, validate, autoSave, dispatch)
+
+  let firstrun = true
   function reactToPreload (..._: any[]) {
+    if (firstrun) {
+      firstrun = false
+      if (preload == null) return
+    }
     if (!$store.hasUnsavedChanges) {
       store.preload(preload).catch(console.error)
     }
   }
   $: reactToPreload(preload)
   setContext(FORM_CONTEXT, store)
-
-  function reactToSubmitAndValidate (..._: any[]) {
-    if (submit) (store as any).submitFn = submit
-    if (validate) (store as any).validateFn = validate
-  }
-  $: reactToSubmitAndValidate(submit, validate)
-
-  const dispatch = createEventDispatcher()
-
-  async function onSubmit () {
-    const resp = await store.submit()
-    if (resp.success) dispatch('saved', resp.data)
-    else dispatch('validationfail')
-  }
 
   onMount(() => {
     store.mount()
@@ -72,6 +76,6 @@
   })
 </script>
 
-<form bind:this={formelement} {name} class={className} on:submit|preventDefault={onSubmit} use:eq={{ store }} {autocomplete}>
+<form bind:this={formelement} {...$$restProps} on:submit|preventDefault={() => store.submit()} use:eq={{ store }}>
   <slot messages={$store.messages.global} allMessages={$store.messages.all} saved={$store.saved} validating={$store.validating} submitting={$store.submitting} valid={$store.valid} invalid={$store.invalid} showingInlineErrors={$store.showingInlineErrors} data={$store.data} hasUnsavedChanges={$store.hasUnsavedChanges} />
 </form>

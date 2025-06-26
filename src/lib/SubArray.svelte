@@ -12,10 +12,9 @@
   const pathToArray = [inheritedPath, path].filter(isNotBlank).join('.')
 
   const store = getContext<FormStore>(FORM_CONTEXT)
-  store.registerArray(pathToArray, undefined, 0, () => false)
   const arr = store.getField<any[]>(pathToArray)
   const reactToArr = (..._: any) => {
-    if ($arr == null) store.setField(pathToArray, []).catch(console.error)
+    if ($arr == null) store.setField(pathToArray, [], { notDirty: true }).catch(console.error)
   }
   $: reactToArr($arr)
 </script>

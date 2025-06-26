@@ -1,6 +1,6 @@
 {
   "name": "@txstate-mws/svelte-forms",
-  "version": "1.5.8",
+  "version": "2.0.0",
   "scripts": {
     "prepublishOnly": "svelte-package",
     "dev": "vite dev",
@@ -26,15 +26,15 @@
     "txstate-utils": "^1.8.2"
   },
   "devDependencies": {
-    "@sveltejs/adapter-auto": "^3.0.0",
+    "@sveltejs/adapter-auto": "^6.0.0",
     "@sveltejs/kit": "^2.5.3",
     "@sveltejs/package": "^2.0.2",
+    "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "eslint-config-standard-with-typescript": "^43.0.0",
-    "eslint-plugin-svelte": "^2.0.0",
-    "svelte-check": "^3.0.1",
-    "tslib": "^2.3.1",
+    "eslint-plugin-svelte": "^3.0.0",
+    "svelte-check": "^4.0.0",
     "typescript": "^5.0.4",
-    "vite": "^5.1.5"
+    "vite": "^6.0.0"
   },
   "peerDependencies": {
     "svelte": "^3.53.1 || ^4.0.0 || ^5.0.0"

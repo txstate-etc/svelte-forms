@@ -35,6 +35,11 @@
   export let initialize: ((value: any) => any) | undefined = undefined
   export let finalize: ((value: any, isSubmit: boolean) => any) | undefined = undefined
   export let conditional = true
+  /** Only provided for binding, useful for components that wrap Field */
+  export let finalSerialize: ((v: any) => string) = () => ''
+  /** Only provided for binding, useful for components that wrap Field */
+  export let finalDeserialize: ((v: string) => any) = () => undefined
+
   $: finalSerialize = (serialize ?? (number
     ? numberSerialize
     : json
@@ -71,14 +76,16 @@
   $: invalid = $fieldValid === 'invalid'
   $: valid = $fieldValid === 'valid'
 
-  function setVal (v: T | ((v: T) => T), notDirty?: boolean) {
+  function setVal (v: T | ((v: T) => T)) {
     if (typeof v === 'function') v = (v as (v: T) => T)($val)
-    store.setField(finalPath, v).then(wasDifferent => {
-      if (wasDifferent && !notDirty) store.dirtyField(finalPath)
-    }).catch(console.error)
+    store.setField(finalPath, v).catch(console.error)
   }
 
   function onChange (e: any) {
+    if (this.type === 'checkbox') {
+      setVal(this.checked)
+      return
+    }
     const resolvedVal = this.value ?? e.detail
     const val = finalDeserialize(resolvedVal)
     setVal(val)
@@ -107,9 +114,9 @@
     await registerFieldPromise
     if (!conditional && lastConditional) {
       store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: once ? ($val ?? defaultValue) : $val } }))
-      store.setField(finalPath, undefined).catch(console.error)
+      store.setField(finalPath, undefined, { notDirty: true }).catch(console.error)
     } else if (conditional && !lastConditional) {
-      store.setField(finalPath, $store.conditionalData[finalPath]).catch(console.error)
+      store.setField(finalPath, $store.conditionalData[finalPath], { notDirty: true }).catch(console.error)
       store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: undefined } }))
     }
     once = false

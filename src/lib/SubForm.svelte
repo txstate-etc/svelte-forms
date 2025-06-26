@@ -25,9 +25,9 @@
   function handleConditionalData (..._: any) {
     if (!conditional && lastConditional) {
       store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: $obj } }))
-      store.setField(finalPath, undefined).catch(console.error)
+      store.setField(finalPath, undefined, { notDirty: true }).catch(console.error)
     } else if (conditional && !lastConditional) {
-      store.setField(finalPath, $store.conditionalData[finalPath]).catch(console.error)
+      store.setField(finalPath, $store.conditionalData[finalPath], { notDirty: true }).catch(console.error)
       store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: undefined } }))
     }
     lastConditional = conditional
