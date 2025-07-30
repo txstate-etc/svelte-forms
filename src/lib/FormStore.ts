@@ -138,6 +138,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   async preload (data: Partial<StateType> | undefined) {
+    if (equal(data, this.value.data)) return
     this.initialized.clear()
     this.beforeUserChanges = undefined
     await this.setData(data ?? {}, !this.mounted, data == null)
