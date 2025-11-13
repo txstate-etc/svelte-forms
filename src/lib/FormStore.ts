@@ -59,8 +59,9 @@ function setPathValid (validField: Record<string, ValidState>, path: string) {
 
 const initialState = { data: {}, conditionalData: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, showingInlineErrors: false, validating: false, submitting: false, saved: false, dirty: undefined, width: 800, hasUnsavedChanges: false }
 export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
-  validationTimer?: number
+  validationTimer?: ReturnType<typeof setTimeout>
   validateVersion: number
+  preloadTimer?: ReturnType<typeof setTimeout>
   submitVersion: number
   fields: Map<string, number>
   arrayFields = new Map<string, number>()
@@ -133,6 +134,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.dirtyFieldsNextTick = new Set()
     this.beforeUserChanges = undefined
     clearTimeout(this.validationTimer)
+    clearTimeout(this.preloadTimer)
     this.set(structuredClone(initialState))
     if (data != null) this.preload(data)
   }
@@ -142,7 +144,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.initialized.clear()
     this.beforeUserChanges = undefined
     await this.setData(data ?? {}, !this.mounted, data == null)
-    setTimeout(() => {
+    this.preloadTimer = setTimeout(() => {
       this.beforeUserChanges ??= this.value.data
       if (data != null) this.setDirtyForm() // on autosave forms, we need to do this again after fields are registered
       this.set(this.value) // this will cause state.hasUnsavedChanges to be re-evaluated
