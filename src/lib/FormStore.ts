@@ -364,14 +364,14 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
         this.arrayFields.set(path, this.arrayFields.size + this.fields.size)
       }
     }
-    this.dirtyNextTick()
-    const maxDirty = Math.max(...[...this.fields.entries(), ...this.arrayFields.entries()].map(([key, order]) => this.dirtyFields.has(key) ? order : -1))
+    const maxDirty = Math.max(...[...this.fields.entries(), ...this.arrayFields.entries()].map(([key, order]) => this.dirtyFields.has(key) || this.dirtyFieldsNextTick.has(key) ? order : -1))
     for (const [key, order] of this.arrayFields) {
-      if (order <= maxDirty) this.dirtyFields.add(key)
+      if (order <= maxDirty) this.dirtyFieldsNextTick.add(key)
     }
     for (const [key, order] of this.fields) {
-      if (order <= maxDirty) this.dirtyFields.add(key)
+      if (order <= maxDirty) this.dirtyFieldsNextTick.add(key)
     }
+    if (!this.value.validating) this.dirtyNextTick()
   }
 
   public unmount () {
