@@ -1,6 +1,6 @@
 {
   "name": "@txstate-mws/svelte-forms",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "scripts": {
     "prepublishOnly": "svelte-package",
     "dev": "vite dev",
