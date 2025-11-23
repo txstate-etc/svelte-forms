@@ -95,24 +95,26 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   set (state: IFormStore<StateType>) {
-    state.invalid = state.messages.all.some(messageIsError)
+    const statechanges: Partial<IFormStore<StateType>> = {}
+    statechanges.invalid = state.messages.all.some(messageIsError)
     const validField: Record<string, ValidState> = Array.from(this.fields.keys()).reduce(setPathValid, {})
     for (const m of state.messages.all) {
       if (m.path && messageIsError(m)) validField[m.path] = 'invalid'
     }
-    state.messages.fields = state.messages.all.filter(m => m.path).reduce((acc, curr) => {
+    statechanges.messages = { ...state.messages }
+    statechanges.messages.fields = state.messages.all.filter(m => m.path).reduce((acc, curr) => {
       if (curr.path && (this.dirtyForm || this.dirtyFields.has(curr.path))) {
         acc[curr.path] ??= []
         acc[curr.path].push(curr)
       }
       return acc
     }, {})
-    state.messages.global = state.messages.all.filter(m => !m.path || (!this.fields.has(m.path) && !this.arrayFields.has(m.path)))
-    state.validField = validField
-    state.valid = !state.invalid
-    state.showingInlineErrors = state.messages.global.some(messageIsError) || Object.values(state.messages.fields).some(msgs => msgs.some(messageIsError))
-    state.hasUnsavedChanges = this.beforeUserChanges != null && !equal(state.data, this.beforeUserChanges)
-    super.set(state)
+    statechanges.messages.global = state.messages.all.filter(m => !m.path || (!this.fields.has(m.path) && !this.arrayFields.has(m.path)))
+    statechanges.validField = validField
+    statechanges.valid = !statechanges.invalid
+    statechanges.showingInlineErrors = statechanges.messages.global.some(messageIsError) || Object.values(statechanges.messages.fields).some(msgs => msgs.some(messageIsError))
+    statechanges.hasUnsavedChanges = !equal(state.data, this.beforeUserChanges)
+    super.set({ ...state, ...statechanges })
   }
 
   updateDirtyOnBlur () {
@@ -141,13 +143,13 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
 
   async preload (data: Partial<StateType> | undefined) {
     if (equal(data, this.value.data)) return
+    this.preloaded = true
     this.initialized.clear()
-    this.beforeUserChanges = undefined
-    await this.setData(data ?? {}, !this.mounted, data == null)
+    const initialized = await this.initialize(data ?? {})
+    this.beforeUserChanges = structuredClone(initialized)
+    await this.setData(initialized, false, data == null)
     this.preloadTimer = setTimeout(() => {
-      this.beforeUserChanges ??= this.value.data
       if (data != null) this.setDirtyForm() // on autosave forms, we need to do this again after fields are registered
-      this.set(this.value) // this will cause state.hasUnsavedChanges to be re-evaluated
     }, 10)
   }
 
@@ -156,6 +158,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
    * of coming from the database/API
    */
   async setData (data: Partial<StateType>, skipInitialize?: boolean, skipDirtyForm?: boolean) {
+    this.preloaded = true
     const dataToSet = skipInitialize ? data : await this.initialize(data)
     if (!skipDirtyForm) this.setDirtyForm(dataToSet)
     this.update(v => ({ ...v, data: dataToSet, conditionalData: {} }))
@@ -163,7 +166,6 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   setDirtyForm (data: Partial<StateType> = this.value.data) {
-    this.preloaded = true
     if (this.autoSave) {
       // normally when we preload or save a form, we assume we are editing an
       // existing object, so we set the whole form dirty and show all errors
