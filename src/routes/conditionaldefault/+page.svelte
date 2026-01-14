@@ -18,7 +18,8 @@
   }
   const preload = {
     first: 'John',
-    last: 'Doe'
+    last: 'Doe',
+    age: 30
   }
   let lastautosave: Date | undefined
   let lastsave: Date | undefined
@@ -37,7 +38,7 @@
     {#each messages as msg}{msg.message}<br>{/each}
   </Field>
   <br>
-  <Field path="age" defaultValue={0} number let:path let:value let:messages let:onBlur let:onChange>
+  <Field path="age" defaultValue={0} number let:path let:value let:messages let:onBlur let:onChange conditional={isNotBlank(data.last)}>
     <input type="number" name={path} value={value} on:input={onChange} on:blur={onBlur}>
     {#each messages as msg}{msg.message}<br>{/each}
   </Field>

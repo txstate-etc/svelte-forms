@@ -112,11 +112,9 @@
   async function handleConditionalData (..._: any) {
     await registerFieldPromise
     if (!conditional && lastConditional) {
-      store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: $val } }))
-      store.setField(finalPath, undefined, { notDirty: true }).catch(console.error)
+      store.update(v => ({ ...v, data: { ...v.data, [finalPath]: undefined }, conditionalData: { ...v.conditionalData, [finalPath]: { value: $val } } }))
     } else if (conditional && !lastConditional) {
-      store.setField(finalPath, $store.conditionalData[finalPath], { notDirty: true }).catch(console.error)
-      store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: undefined } }))
+      store.update(v => ({ ...v, data: { ...v.data, [finalPath]: v.conditionalData[finalPath]?.value }, conditionalData: { ...v.conditionalData, [finalPath]: undefined } }))
     }
     lastConditional = conditional
   }

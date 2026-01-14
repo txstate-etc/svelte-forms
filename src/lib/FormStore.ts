@@ -27,7 +27,7 @@ type ValidState = 'valid' | 'invalid' | undefined
 
 interface IFormStore<StateType> {
   data: Partial<StateType>
-  conditionalData: Record<string, any>
+  conditionalData: Record<string, { value: any } | undefined>
   messages: {
     all: Feedback[]
     global: Feedback[]
@@ -161,7 +161,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.preloaded = true
     const dataToSet = skipInitialize ? data : await this.initialize(data)
     if (!skipDirtyForm) this.setDirtyForm(dataToSet)
-    this.update(v => ({ ...v, data: dataToSet, conditionalData: { ...Object.keys(v.conditionalData).reduce((acc, key) => ({ ...acc, [key]: get(dataToSet, key) }), {}) } }))
+    this.update(v => ({ ...v, data: dataToSet, conditionalData: { ...Object.keys(v.conditionalData).reduce((acc, key) => ({ ...acc, [key]: { value: get(dataToSet, key) } }), {}) } }))
     this.triggerValidation()
   }
 
