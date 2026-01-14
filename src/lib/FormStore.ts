@@ -142,7 +142,6 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   async preload (data: Partial<StateType> | undefined) {
-    console.log('Preloading', data)
     if (equal(data, this.value.data)) return
     this.preloaded = true
     this.initialized.clear()
@@ -162,7 +161,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.preloaded = true
     const dataToSet = skipInitialize ? data : await this.initialize(data)
     if (!skipDirtyForm) this.setDirtyForm(dataToSet)
-    this.update(v => ({ ...v, data: dataToSet, conditionalData: {} }))
+    this.update(v => ({ ...v, data: dataToSet, conditionalData: { ...Object.keys(v.conditionalData).reduce((acc, key) => ({ ...acc, [key]: get(dataToSet, key) }), {}) } }))
     this.triggerValidation()
   }
 
@@ -314,7 +313,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
 
   unregisterField (path: string) {
     const deletedidx = this.fields.get(path)
-    if (!deletedidx) return
+    if (deletedidx == null) return
     this.fields.delete(path)
     this.dirtyFields.delete(path)
     this.dirtyFieldsNextTick.delete(path)
