@@ -1,6 +1,6 @@
 <script lang="ts" generics="T = object | string | number | boolean | Date | undefined">
   import { getContext, onDestroy } from 'svelte'
-  import { isNotBlank } from 'txstate-utils'
+  import { isNotBlank, set } from 'txstate-utils'
   import { FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { Feedback, FormStore } from './FormStore'
   import { booleanDeserialize, booleanNullableDeserialize, booleanNullableSerialize, booleanSerialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, defaultDeserialize, defaultSerialize, jsonDeserialize, jsonSerialize, nullableDeserialize, nullableSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from './util'
@@ -112,9 +112,15 @@
   async function handleConditionalData (..._: any) {
     await registerFieldPromise
     if (!conditional && lastConditional) {
-      store.update(v => ({ ...v, data: { ...v.data, [finalPath]: undefined }, conditionalData: { ...v.conditionalData, [finalPath]: { value: $val } } }))
+      store.update(v => {
+        const newData = set(v.data, finalPath, undefined)
+        return { ...v, data: newData, conditionalData: { ...v.conditionalData, [finalPath]: { value: $val } } }
+      })
     } else if (conditional && !lastConditional) {
-      store.update(v => ({ ...v, data: { ...v.data, [finalPath]: v.conditionalData[finalPath]?.value }, conditionalData: { ...v.conditionalData, [finalPath]: undefined } }))
+      store.update(v => {
+        const newData = set(v.data, finalPath, v.conditionalData[finalPath]?.value)
+        return { ...v, data: newData, conditionalData: { ...v.conditionalData, [finalPath]: undefined } }
+      })
     }
     lastConditional = conditional
   }
