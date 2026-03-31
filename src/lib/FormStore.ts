@@ -162,7 +162,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     const dataToSet = skipInitialize ? data : await this.initialize(data)
     if (!skipDirtyForm) this.setDirtyForm(dataToSet)
     this.update(v => ({ ...v, data: dataToSet, conditionalData: { ...Object.keys(v.conditionalData).reduce((acc, key) => ({ ...acc, [key]: { value: get(dataToSet, key) } }), {}) } }))
-    this.triggerValidation()
+    this.triggerValidation(!skipInitialize)
   }
 
   setDirtyForm (data: Partial<StateType> = this.value.data) {
@@ -393,15 +393,15 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     if (this.needsValidation) this.triggerValidation()
   }
 
-  protected triggerValidation () {
+  protected triggerValidation (skipAutoSave?: boolean) {
     if (!this.mounted) {
       this.needsValidation = true
       return
     }
-    this.update(v => ({ ...v, saved: false, validating: !this.autoSave, submitting: !!this.autoSave || v.submitting }))
+    this.update(v => ({ ...v, saved: false, validating: !this.autoSave, submitting: (this.autoSave && !skipAutoSave) || v.submitting }))
     clearTimeout(this.validationTimer)
     this.validationTimer = setTimeout(() => {
-      if (this.autoSave) this.submit({ autoSave: true }).catch(console.error)
+      if (this.autoSave && !skipAutoSave) this.submit({ autoSave: true }).catch(console.error)
       else this.validate().catch(console.error)
     }, 300)
   }
