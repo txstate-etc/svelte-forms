@@ -1,6 +1,6 @@
 <script lang="ts" generics="T = object | string | number | boolean | Date | undefined">
   import { getContext, onDestroy } from 'svelte'
-  import { isNotBlank, set } from 'txstate-utils'
+  import { equal, isNotBlank, set } from 'txstate-utils'
   import { FORM_CONTEXT, FORM_INHERITED_PATH } from './FormStore'
   import type { Feedback, FormStore } from './FormStore'
   import { booleanDeserialize, booleanNullableDeserialize, booleanNullableSerialize, booleanSerialize, dateDeserialize, dateSerialize, datetimeDeserialize, datetimeSerialize, defaultDeserialize, defaultSerialize, jsonDeserialize, jsonSerialize, nullableDeserialize, nullableSerialize, numberDeserialize, numberNullableDeserialize, numberSerialize } from './util'
@@ -35,6 +35,8 @@
   export let initialize: ((value: any) => any) | undefined = undefined
   export let finalize: ((value: any, isSubmit: boolean) => any) | undefined = undefined
   export let conditional = true
+  export let allowedValues: any[] | undefined = undefined
+  export let allowedValuesMultiple = false
   /** Only provided for binding, useful for components that wrap Field */
   export let finalSerialize: ((v: any) => string) = () => ''
   /** Only provided for binding, useful for components that wrap Field */
@@ -83,11 +85,11 @@
   }
 
   function onChange (e: any) {
-    if (this.type === 'checkbox') {
+    if (this?.type === 'checkbox') {
       setVal(this.checked)
       return
     }
-    const resolvedVal = this.value ?? e.detail
+    const resolvedVal = this?.value ?? e.detail
     const val = finalDeserialize(resolvedVal)
     setVal(val)
     if (this instanceof HTMLInputElement) {
@@ -127,6 +129,36 @@
   }
 
   $: handleConditionalData(conditional).catch(console.error)
+
+  async function reactToAllowedValues (..._: any[]) {
+    if (allowedValues == null) return
+    if (allowedValuesMultiple) {
+      if (conditional) {
+        if (!Array.isArray($val)) return
+        const filtered = $val.filter(v => allowedValues!.some(av => equal(av, v)))
+        if (!equal(filtered, $val)) await store.setField(finalPath, filtered, { notDirty: true })
+      } else {
+        const current = $store.conditionalData[finalPath]?.value
+        if (!Array.isArray(current)) return
+        const filtered = current.filter(v => allowedValues!.some(av => equal(av, v)))
+        if (!equal(filtered, current)) {
+          store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: { value: filtered } } }))
+        }
+      }
+      return
+    }
+    if (!allowedValues.length) {
+      return await store.setField(finalPath, finalDeserialize(''), { notDirty: true })
+    }
+    if (conditional) {
+      if (!allowedValues.some(av => equal(av, $val))) {
+        await store.setField(finalPath, notNull ? allowedValues[0] : finalDeserialize(''), { notDirty: true })
+      }
+    } else if ($store.conditionalData[finalPath] && !allowedValues.some(av => equal(av, $store.conditionalData[finalPath]!.value))) {
+      store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: { value: notNull ? allowedValues[0] : finalDeserialize('') } } }))
+    }
+  }
+  $: reactToAllowedValues(allowedValues).catch(console.error)
 </script>
 
 {@html '<!-- svelte-forms(' + finalPath + ') -->'}
