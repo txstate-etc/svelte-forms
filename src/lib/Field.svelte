@@ -66,7 +66,8 @@
   const finalPath = [inheritedPath, path].filter(isNotBlank).join('.')
 
   const store = getContext<FormStore>(FORM_CONTEXT)
-  const registerFieldPromise = store.registerField(finalPath, defaultValue, initialize, finalize)
+  let registered = false
+  const registerFieldPromise = store.registerField(finalPath, defaultValue, initialize, finalize).then(() => { registered = true })
 
   const val = store.getField<T>(finalPath)
   const messages = store.getFeedback(finalPath)
@@ -114,7 +115,7 @@
     if (!conditional && lastConditional) {
       store.update(v => {
         const newData = set(v.data, finalPath, undefined)
-        return { ...v, data: newData, conditionalData: { ...v.conditionalData, [finalPath]: { value: $val } } }
+        return { ...v, data: newData, conditionalData: { ...v.conditionalData, [finalPath]: { value: $val ?? v.conditionalData[finalPath]?.value } } }
       })
     } else if (conditional && !lastConditional) {
       store.update(v => {
@@ -129,6 +130,6 @@
 </script>
 
 {@html '<!-- svelte-forms(' + finalPath + ') -->'}
-{#if conditional}
+{#if ((!$store.initializing && registered) || initialize == null) && conditional}
   <slot path={finalPath} finalPath={finalPath} value={serializedVal} rawValue={$val} messages={$messages} {valid} {invalid} {setVal} {onChange} {onBlur} serialize={finalSerialize} deserialize={finalDeserialize} />
 {/if}

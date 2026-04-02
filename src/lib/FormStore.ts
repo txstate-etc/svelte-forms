@@ -33,6 +33,7 @@ interface IFormStore<StateType> {
     global: Feedback[]
     fields: Record<string, Feedback[]>
   }
+  initializing: boolean
   validField: Record<string, ValidState>
   valid: boolean
   invalid: boolean
@@ -57,7 +58,7 @@ function setPathValid (validField: Record<string, ValidState>, path: string) {
   return validField
 }
 
-const initialState = { data: {}, conditionalData: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, showingInlineErrors: false, validating: false, submitting: false, saved: false, dirty: undefined, width: 800, hasUnsavedChanges: false }
+const initialState = { data: {}, conditionalData: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, showingInlineErrors: false, initializing: false, validating: false, submitting: false, saved: false, dirty: undefined, width: 800, hasUnsavedChanges: false }
 export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   validationTimer?: ReturnType<typeof setTimeout>
   validateVersion: number
@@ -141,16 +142,18 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     if (data != null) this.preload(data)
   }
 
+  registerPromises: Promise<any>[] = []
   async preload (data: Partial<StateType> | undefined) {
     if (equal(data, this.value.data)) return
-    this.preloaded = true
     this.initialized.clear()
-    const initialized = await this.initialize(data ?? {})
-    this.beforeUserChanges = structuredClone(initialized)
-    await this.setData(initialized, false, data == null)
-    this.preloadTimer = setTimeout(() => {
+    this.registerPromises = []
+    await this.setData(data ?? {}, false, data == null)
+    this.preloadTimer = setTimeout(async () => {
+      await Promise.all(this.registerPromises)
+      this.beforeUserChanges = structuredClone(this.value.data)
+      this.set({ ...this.value }) // .set() will evaluate hasUnsavedChanges
       if (data != null) this.setDirtyForm() // on autosave forms, we need to do this again after fields are registered
-    }, 10)
+    }, 0)
   }
 
   /**
@@ -159,9 +162,10 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
    */
   async setData (data: Partial<StateType>, skipInitialize?: boolean, skipDirtyForm?: boolean) {
     this.preloaded = true
+    this.update(v => ({ ...v, initializing: !skipInitialize, data, conditionalData: { ...Object.keys(v.conditionalData).reduce((acc, key) => ({ ...acc, [key]: { value: get(data, key) } }), {}) } }))
     const dataToSet = skipInitialize ? data : await this.initialize(data)
     if (!skipDirtyForm) this.setDirtyForm(dataToSet)
-    this.update(v => ({ ...v, data: dataToSet, conditionalData: { ...Object.keys(v.conditionalData).reduce((acc, key) => ({ ...acc, [key]: { value: get(dataToSet, key) } }), {}) } }))
+    this.update(v => ({ ...v, initializing: false, data: dataToSet, conditionalData: { ...Object.keys(v.conditionalData).reduce((acc, key) => ({ ...acc, [key]: { value: get(dataToSet, key) ?? v.conditionalData[key]?.value } }), {}) } }))
     this.triggerValidation(!skipInitialize)
   }
 
@@ -307,8 +311,11 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
         return v
       })
     } else if (this.preloaded && initialize && !this.initialized.has(path)) {
-      await this.setField(path, get(this.value.data, path), { initialize: true, notDirty: true })
+      const setFieldPromise = this.setField(path, get(this.value.data, path), { initialize: true, notDirty: true })
+      this.registerPromises.push(setFieldPromise)
+      await setFieldPromise
     }
+    this.update(v => ({...v, conditionalData: { ...v.conditionalData, [path]: { value: get(v.data, path) ?? initialValue }}}))
   }
 
   unregisterField (path: string) {

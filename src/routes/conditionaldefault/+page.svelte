@@ -42,7 +42,7 @@
     <input type="number" name={path} value={value} on:input={onChange} on:blur={onBlur}>
     {#each messages as msg}{msg.message}<br>{/each}
   </Field>
-  <button disabled={submitting || invalid}>Submit</button>
+  <button disabled={submitting || invalid || !hasUnsavedChanges}>Submit</button>
   {#if lastautosave != null}
     <p>Last autosaved: {lastautosave.toLocaleTimeString()}</p>
   {/if}
