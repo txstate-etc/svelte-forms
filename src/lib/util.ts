@@ -1,7 +1,6 @@
 import { dateToISOWithTZ, isBlank, stringify } from 'txstate-utils'
 
 function dtToJSON () {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   return dateToISOWithTZ(this)
 }
 
@@ -70,7 +69,7 @@ export function booleanSerialize (b?: boolean) {
 }
 
 export function booleanNullableSerialize (b?: boolean) {
-  return b == null ? '' : String(!!b)
+  return b == null ? '' : String(b)
 }
 
 export function booleanDeserialize (b: string) {

@@ -74,8 +74,8 @@
 
   export let path: string
   export let initialState: T | ((index: number) => T) | undefined = undefined
-  export let addMoreText: string = '+ Add'
-  export let addMoreClass: string = ''
+  export let addMoreText = '+ Add'
+  export let addMoreClass = ''
   export let minLength = 0
   export let startingLength = minLength
   export let maxedText = addMoreText
@@ -97,6 +97,9 @@
   $: reactToArr($arr)
   const feedback = store.getFeedback(pathToArray)
   $: messages = $feedback ?? []
+  $: maxed = $arr?.length >= maxLength
+  $: minned = ($arr?.length ?? 0) <= minLength
+  $: lastIdx = ($arr?.length ?? 0) - 1
 
   function onClick () {
     const state = (initialState instanceof Function) ? initialState($arr.length) : initialState
@@ -116,15 +119,11 @@
     registered = true
     return () => store.unregisterArray(pathToArray)
   })
-
-  $: maxed = $arr?.length >= maxLength
-  $: minned = ($arr?.length ?? 0) <= minLength
-  $: lastIdx = ($arr?.length ?? 0) - 1
 </script>
 
 <SubForm {path} {conditional}>
   <slot name="above" path={pathToArray} value={$arr ?? []} {messages} {minned} {maxed} {minLength} {maxLength} currentLength={$arr?.length ?? 0} index={undefined} onClick={undefined} onAdd={undefined} onMoveUp={undefined} onMoveDown={undefined} onDelete={undefined} />
-  {#each ($arr ?? []) as value,index}
+  {#each ($arr ?? []) as value, index (value)}
     <SubForm path={String(index)} let:path>
       <slot {path} {index} {value} {messages} {minned} {maxed} {minLength} {maxLength} currentLength={$arr?.length ?? 0} onDelete={remove(index)} onMoveUp={moveUp(index)} onMoveDown={moveUp(index + 1)} onAdd={onClick} onClick={undefined} />
     </SubForm>

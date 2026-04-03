@@ -32,7 +32,7 @@
     <AddMore path="multi" initialState={{ name: 'Barney' }} maxLength={3}>
       <Field path="name" let:path let:value let:onChange let:onBlur let:messages let:invalid>
         <input type="text" name={path} {value} class:invalid on:change={onChange} on:keyup={onChange} on:blur={onBlur}><br>
-        {#each messages as msg}
+        {#each messages as msg (msg.path, msg.type, msg.message)}
           <div style='background-color: pink'>{msg.message}</div>
         {/each}
       </Field>
@@ -73,7 +73,7 @@
       <AddMore path="" initialState={{ name: 'Barney' }} maxLength={3} minLength={2}>
         <Field path="name" let:path let:value let:onChange let:onBlur let:messages let:invalid>
           <input type="text" name={path} {value} class:invalid on:change={onChange} on:keyup={onChange} on:blur={onBlur}><br>
-          {#each messages as msg}
+          {#each messages as msg (msg.path, msg.type, msg.message)}
             <div style='background-color: pink'>{msg.message}</div>
           {/each}
         </Field>
@@ -82,7 +82,7 @@
   </SubForm>
   <fieldset>
     <legend>Tasks:</legend>
-    <AddMore path="tasks" initialState={ (index) => { return { task: `Eat ${index + 1} cookie${index > 1 ? 's' : ''}!` } } } minLength={3}>
+    <AddMore path="tasks" initialState={ index => ({ task: `Eat ${index + 1} cookie${index > 1 ? 's' : ''}!` }) } minLength={3}>
       <Field path="task" let:path let:value let:onChange let:onBlur let:messages let:invalid>
         <input type="text" name={path} {value} class:invalid on:change={onChange} on:keyup={onChange} on:blur={onBlur}><br>
       </Field>

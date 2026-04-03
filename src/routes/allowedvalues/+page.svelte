@@ -66,7 +66,7 @@
     <Field path="color" allowedValues={useFullList ? colors : limitedColors} let:value let:setVal let:path>
       <select name={path} value={value} on:change={e => setVal(e.currentTarget.value || undefined)}>
         <option value="">-- none --</option>
-        {#each (useFullList ? colors : limitedColors) as c}
+        {#each (useFullList ? colors : limitedColors) as c (c)}
           <option value={c}>{c}</option>
         {/each}
       </select>
@@ -85,7 +85,7 @@
     <br>
     <Field path="size" notNull allowedValues={useFullSizes ? sizes : limitedSizes} let:value let:setVal let:path>
       <select name={path} value={value} on:change={e => setVal(e.currentTarget.value)}>
-        {#each (useFullSizes ? sizes : limitedSizes) as s}
+        {#each (useFullSizes ? sizes : limitedSizes) as s (s)}
           <option value={s}>{s}</option>
         {/each}
       </select>
@@ -116,7 +116,7 @@
     <Field path="flavor" conditional={showFlavor} allowedValues={useFullFlavors ? flavors : limitedFlavors} let:value let:setVal let:path>
       <select name={path} value={value} on:change={e => setVal(e.currentTarget.value || undefined)}>
         <option value="">-- none --</option>
-        {#each (useFullFlavors ? flavors : limitedFlavors) as f}
+        {#each (useFullFlavors ? flavors : limitedFlavors) as f (f)}
           <option value={f}>{f}</option>
         {/each}
       </select>
@@ -138,7 +138,7 @@
     <br>
     <Field path="flavorRequired" notNull conditional={showFlavor} allowedValues={useFullFlavors ? flavors : limitedFlavors} let:value let:setVal let:path>
       <select name={path} value={value} on:change={e => setVal(e.currentTarget.value)}>
-        {#each (useFullFlavors ? flavors : limitedFlavors) as f}
+        {#each (useFullFlavors ? flavors : limitedFlavors) as f (f)}
           <option value={f}>{f}</option>
         {/each}
       </select>
@@ -158,7 +158,7 @@
     <Field path="pet" json allowedValues={useFullPets ? pets : limitedPets} let:value let:onChange let:path>
       <select name={path} value={value} on:change={onChange}>
         <option value="">-- none --</option>
-        {#each (useFullPets ? pets : limitedPets) as p}
+        {#each (useFullPets ? pets : limitedPets) as p (p.id)}
           <option value={JSON.stringify(p)}>{p.name}</option>
         {/each}
       </select>
@@ -188,7 +188,7 @@
     <Field path="conditionalPet" json conditional={showPet} allowedValues={useFullPets ? pets : limitedPets} let:value let:setVal let:path let:deserialize>
       <select name={path} value={value} on:change={e => setVal(deserialize(e.currentTarget.value))}>
         <option value="">-- none --</option>
-        {#each (useFullPets ? pets : limitedPets) as p}
+        {#each (useFullPets ? pets : limitedPets) as p (p.id)}
           <option value={JSON.stringify(p)}>{p.name}</option>
         {/each}
       </select>
@@ -210,7 +210,7 @@
     <br>
     <Field path="requiredPet" json notNull conditional={showPet} allowedValues={useFullPets ? pets : limitedPets} let:value let:setVal let:path let:deserialize>
       <select name={path} value={value} on:change={e => setVal(deserialize(e.currentTarget.value))}>
-        {#each (useFullPets ? pets : limitedPets) as p}
+        {#each (useFullPets ? pets : limitedPets) as p (p.id)}
           <option value={JSON.stringify(p)}>{p.name}</option>
         {/each}
       </select>
@@ -228,7 +228,7 @@
     </label>
     <br>
     <Field path="toppings" json defaultValue={[]} allowedValues={useFullToppings ? toppings : limitedToppings} allowedValuesMultiple let:rawValue let:setVal let:path>
-      {#each (useFullToppings ? toppings : limitedToppings) as t}
+      {#each (useFullToppings ? toppings : limitedToppings) as t (t.id)}
         <label>
           <input type="checkbox" checked={Array.isArray(rawValue) && rawValue.some(v => equal(v, t))}
             on:change={e => {
@@ -263,7 +263,7 @@
     </label>
     <br>
     <Field path="conditionalToppings" json defaultValue={[]} conditional={showToppings} allowedValues={useFullToppings ? toppings : limitedToppings} allowedValuesMultiple let:rawValue let:setVal let:path>
-      {#each (useFullToppings ? toppings : limitedToppings) as t}
+      {#each (useFullToppings ? toppings : limitedToppings) as t (t.id)}
         <label>
           <input type="checkbox" checked={Array.isArray(rawValue) && rawValue.some(v => equal(v, t))}
             on:change={e => {

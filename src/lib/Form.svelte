@@ -76,6 +76,6 @@
   })
 </script>
 
-<form bind:this={formelement} {...$$restProps} on:submit|preventDefault={() => store.submit()} use:eq={{ store }}>
+<form bind:this={formelement} {...$$restProps} on:submit|preventDefault={async () => await store.submit()} use:eq={{ store }}>
   <slot messages={$store.messages.global} allMessages={$store.messages.all} saved={$store.saved} validating={$store.validating} submitting={$store.submitting} valid={$store.valid} invalid={$store.invalid} showingInlineErrors={$store.showingInlineErrors} data={$store.data} hasUnsavedChanges={$store.hasUnsavedChanges} />
 </form>

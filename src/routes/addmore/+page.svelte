@@ -38,7 +38,7 @@
     </Field>
     <br>
     <svelte:fragment slot="below" let:messages>
-      {#each messages as msg}
+      {#each messages as msg (msg.path, msg.type, msg.message)}
         <div style="background-color: pink">{msg.message}</div>
       {/each}
       <br>

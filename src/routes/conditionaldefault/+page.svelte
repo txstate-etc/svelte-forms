@@ -31,16 +31,16 @@
   This is an example form.<br>
   <Field path="first" serialize={nullableSerialize} deserialize={nullableDeserialize} let:messages let:onBlur let:path let:value let:onChange>
     <input type="text" name={path} value={value} on:input={onChange} on:blur={onBlur}>
-    {#each messages as msg}{msg.message}<br>{/each}
+    {#each messages as msg (msg.path, msg.type, msg.message)}{msg.message}<br>{/each}
   </Field>
   <Field path="last" defaultValue='Connor' serialize={nullableSerialize} deserialize={nullableDeserialize} conditional={isNotBlank(data.first)} let:path let:value let:messages let:onBlur let:onChange>
     <input type="text" name={path} value={value} on:input={onChange} on:blur={onBlur}>
-    {#each messages as msg}{msg.message}<br>{/each}
+    {#each messages as msg (msg.path, msg.type, msg.message)}{msg.message}<br>{/each}
   </Field>
   <br>
   <Field path="age" defaultValue={0} number let:path let:value let:messages let:onBlur let:onChange conditional={isNotBlank(data.last)}>
     <input type="number" name={path} value={value} on:input={onChange} on:blur={onBlur}>
-    {#each messages as msg}{msg.message}<br>{/each}
+    {#each messages as msg (msg.path, msg.type, msg.message)}{msg.message}<br>{/each}
   </Field>
   <button disabled={submitting || invalid || !hasUnsavedChanges}>Submit</button>
   {#if lastautosave != null}

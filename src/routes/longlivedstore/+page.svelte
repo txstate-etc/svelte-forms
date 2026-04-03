@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Field, Form, FormStore } from '$lib'
+  import { Field, Form, type FormStore } from '$lib'
   let shown = false
   let store: FormStore
 </script>

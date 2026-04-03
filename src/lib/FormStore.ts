@@ -139,7 +139,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     clearTimeout(this.validationTimer)
     clearTimeout(this.preloadTimer)
     this.set(structuredClone(initialState))
-    if (data != null) this.preload(data)
+    if (data != null) void this.preload(data)
   }
 
   registerPromises: Promise<any>[] = []
@@ -294,7 +294,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   getFieldValid (path: string) {
-    return derivedStore(this, state => (!!this.dirtyFields.has(path) || this.dirtyForm) ? state.validField[path] : undefined)
+    return derivedStore(this, state => (this.dirtyFields.has(path) || this.dirtyForm) ? state.validField[path] : undefined)
   }
 
   async registerField (path: string, initialValue: any, initialize?: (value: any) => any, finalize?: (value: any, isSubmit: boolean) => any) {
@@ -315,7 +315,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       this.registerPromises.push(setFieldPromise)
       await setFieldPromise
     }
-    this.update(v => ({...v, conditionalData: { ...v.conditionalData, [path]: { value: get(v.data, path) ?? initialValue }}}))
+    this.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [path]: { value: get(v.data, path) ?? initialValue } } }))
   }
 
   unregisterField (path: string) {
@@ -423,7 +423,8 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
 
   private async validate () {
     if (!this.validateFn) return
-    const saveVersion = ++this.validateVersion
+    this.validateVersion += 1
+    const saveVersion = this.validateVersion
     const data = await this.finalize(this.value.data, false)
     const newMessages = await this.validateFn(this.prepForSubmit(data))
     if (this.validateVersion === saveVersion) {
@@ -451,8 +452,9 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   async submit (opts?: { autoSave?: boolean }) {
     try {
       clearTimeout(this.validationTimer)
-      const saveVersion = ++this.submitVersion
-      ++this.validateVersion
+      this.submitVersion += 1
+      const saveVersion = this.submitVersion
+      this.validateVersion += 1
       this.update(v => ({ ...v, submitting: true }))
       const saveData = this.value.data
       const data = await this.finalize(saveData, true)
@@ -472,9 +474,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
             clearTimeout(this.validationTimer)
           }
           this.dispatch?.(opts?.autoSave ? 'autosaved' : 'saved', resp.data)
-        } else {
-          if (!opts?.autoSave) this.dispatch?.('validationfail', resp.messages)
-        }
+        } else if (!opts?.autoSave) this.dispatch?.('validationfail', resp.messages)
       }
       return resp
     } catch (e) {

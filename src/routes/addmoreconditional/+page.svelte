@@ -53,7 +53,7 @@
           Name *
           <input type="text" name={path} {value} class:invalid on:change={onChange} on:keyup={onChange} on:blur={onBlur}>
         </label><br>
-        {#each messages as msg}
+        {#each messages as msg (msg.path, msg.type, msg.message)}
           <div style='background-color: pink'>{msg.message}</div>
         {/each}
       </Field>
@@ -62,7 +62,7 @@
           Middle name *
           <input type="text" name={path} {value} class:invalid on:change={onChange} on:keyup={onChange} on:blur={onBlur}>
         </label><br>
-        {#each messages as msg}
+        {#each messages as msg (msg.path, msg.type, msg.message)}
           <div style='background-color: pink'>{msg.message}</div>
         {/each}
       </Field>
