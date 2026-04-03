@@ -150,12 +150,15 @@
     if (!allowedValues.length) {
       return await store.setField(finalPath, finalDeserialize(''), { notDirty: true })
     }
+    const resolvedDefault = notNull
+      ? defaultValue != null && allowedValues.some(av => equal(av, defaultValue)) ? defaultValue : allowedValues[0]
+      : finalDeserialize('')
     if (conditional) {
       if (!allowedValues.some(av => equal(av, $val))) {
-        await store.setField(finalPath, notNull ? allowedValues[0] : finalDeserialize(''), { notDirty: true })
+        await store.setField(finalPath, resolvedDefault, { notDirty: true })
       }
     } else if ($store.conditionalData[finalPath] && !allowedValues.some(av => equal(av, $store.conditionalData[finalPath]!.value))) {
-      store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: { value: notNull ? allowedValues[0] : finalDeserialize('') } } }))
+      store.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [finalPath]: { value: resolvedDefault } } }))
     }
   }
   $: reactToAllowedValues(allowedValues).catch(console.error)
