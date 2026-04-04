@@ -123,7 +123,7 @@
 
 <SubForm {path} {conditional}>
   <slot name="above" path={pathToArray} value={$arr ?? []} {messages} {minned} {maxed} {minLength} {maxLength} currentLength={$arr?.length ?? 0} index={undefined} onClick={undefined} onAdd={undefined} onMoveUp={undefined} onMoveDown={undefined} onDelete={undefined} />
-  {#each ($arr ?? []) as value, index (value)}
+  {#each ($arr ?? []) as value, index (index)}
     <SubForm path={String(index)} let:path>
       <slot {path} {index} {value} {messages} {minned} {maxed} {minLength} {maxLength} currentLength={$arr?.length ?? 0} onDelete={remove(index)} onMoveUp={moveUp(index)} onMoveDown={moveUp(index + 1)} onAdd={onClick} onClick={undefined} />
     </SubForm>
