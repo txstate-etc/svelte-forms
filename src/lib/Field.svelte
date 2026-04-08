@@ -73,7 +73,6 @@
 
   const val = store.getField<T>(finalPath)
   const messages = store.getFeedback(finalPath)
-  $: serializedVal = finalSerialize($val)
 
   const fieldValid = store.getFieldValid(finalPath)
   $: invalid = $fieldValid === 'invalid'
@@ -166,5 +165,5 @@
 
 {@html '<!-- svelte-forms(' + finalPath + ') -->'}
 {#if ((!$store.initializing && registered) || initialize == null) && conditional}
-  <slot path={finalPath} finalPath={finalPath} value={serializedVal} rawValue={$val} messages={$messages} {valid} {invalid} {setVal} {onChange} {onBlur} serialize={finalSerialize} deserialize={finalDeserialize} />
+  <slot path={finalPath} finalPath={finalPath} value={finalSerialize($val)} rawValue={$val} messages={$messages} {valid} {invalid} {setVal} {onChange} {onBlur} serialize={finalSerialize} deserialize={finalDeserialize} />
 {/if}
