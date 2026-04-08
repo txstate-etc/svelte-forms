@@ -51,7 +51,7 @@ export interface FormStoreEvents<StateType> {
   validationfail: CustomEvent<Feedback[]>
 }
 
-const errorTypes = { [MessageType.ERROR]: true, [MessageType.SYSTEM]: true }
+const errorTypes: Partial<Record<MessageType, boolean>> = { [MessageType.ERROR]: true, [MessageType.SYSTEM]: true }
 function messageIsError (m: Feedback) { return !!errorTypes[m.type] }
 function setPathValid (validField: Record<string, ValidState>, path: string) {
   validField[path] = 'valid'
@@ -69,8 +69,8 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   initialized: Set<string>
   initializes: Map<string, (value: any) => any>
   finalizes: Map<string, (value: any, isSubmit?: boolean) => any>
-  dirtyFields: Set<string>
-  dirtyFieldsNextTick: Set<string>
+  dirtyFields!: Set<string>
+  dirtyFieldsNextTick!: Set<string>
   dirtyForm = false
   preloaded = false
   submitPromise?: Promise<SubmitResponse<StateType>>
@@ -103,7 +103,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       if (m.path && messageIsError(m)) validField[m.path] = 'invalid'
     }
     statechanges.messages = { ...state.messages }
-    statechanges.messages.fields = state.messages.all.filter(m => m.path).reduce((acc, curr) => {
+    statechanges.messages.fields = state.messages.all.filter(m => m.path).reduce<Record<string, Feedback[]>>((acc, curr) => {
       if (curr.path && (this.dirtyForm || this.dirtyFields.has(curr.path))) {
         acc[curr.path] ??= []
         acc[curr.path].push(curr)
@@ -286,7 +286,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
    * Returns a store representing the field's value
    */
   getField <T> (path: string) {
-    return subStore<T>(this, ['data', path].join('.'))
+    return subStore<T, IFormStore<StateType>>(this, ['data', path].join('.'))
   }
 
   getFeedback (path: string) {
@@ -297,7 +297,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     return derivedStore(this, state => (this.dirtyFields.has(path) || this.dirtyForm) ? state.validField[path] : undefined)
   }
 
-  async registerField (path: string, initialValue: any, initialize?: (value: any) => any, finalize?: (value: any, isSubmit: boolean) => any) {
+  async registerField (path: string, initialValue: any, initialize?: (value: any) => any, finalize?: (value: any, isSubmit: boolean | undefined) => any) {
     this.fields.set(path, this.fields.size + this.arrayFields.size)
     if (initialize) this.initializes.set(path, initialize)
     if (finalize) this.finalizes.set(path, finalize)
@@ -461,7 +461,6 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       const dataToSubmit = this.prepForSubmit(data)
       this.submitPromise ??= this.submitFn(dataToSubmit)
       const resp = await this.submitPromise
-      resp.data ??= dataToSubmit as StateType
       if (saveVersion === this.submitVersion) {
         // if this is a regular submission -> dirty the whole form, even if it's an autoSave form
         if (!opts?.autoSave) this.dirtyForm = true
@@ -470,14 +469,14 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
         this.update(v => ({ ...v, saved: resp.success, messages: { global: [], fields: {}, all: resp.messages } }))
         if (resp.success) {
           if (!opts?.autoSave) {
-            await this.preload(resp.data)
+            if (resp.data != null) await this.preload(resp.data)
             clearTimeout(this.validationTimer)
           }
-          this.dispatch?.(opts?.autoSave ? 'autosaved' : 'saved', resp.data)
+          this.dispatch?.(opts?.autoSave ? 'autosaved' : 'saved', resp.data ?? dataToSubmit)
         } else if (!opts?.autoSave) this.dispatch?.('validationfail', resp.messages)
       }
-      return resp
-    } catch (e) {
+      return { ...resp, data: resp.data ?? dataToSubmit }
+    } catch (e: any) {
       const messages: Feedback[] = [{
         type: MessageType.SYSTEM,
         message: e.message
