@@ -114,7 +114,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     statechanges.validField = validField
     statechanges.valid = !statechanges.invalid
     statechanges.showingInlineErrors = statechanges.messages.global.some(messageIsError) || Object.values(statechanges.messages.fields).some(msgs => msgs.some(messageIsError))
-    statechanges.hasUnsavedChanges = !!this.mounted && !equal(state.data, this.beforeUserChanges)
+    statechanges.hasUnsavedChanges = !!this.mounted && !equal(state.data ?? {}, this.beforeUserChanges ?? {})
     super.set({ ...state, ...statechanges })
   }
 
