@@ -31,7 +31,7 @@
     }
   }
 
-  export let submit: $$Props['submit'] | undefined = undefined
+  export let submit: $$Props['submit'] = undefined
   export let validate: $$Props['validate'] = undefined
   export let autoSave = false
   export let preload: T | undefined = undefined

@@ -1,6 +1,6 @@
 import { dateToISOWithTZ, isBlank, stringify } from 'txstate-utils'
 
-function dtToJSON () {
+function dtToJSON (this: Date) {
   return dateToISOWithTZ(this)
 }
 

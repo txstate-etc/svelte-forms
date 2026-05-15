@@ -13,7 +13,7 @@ const customConfig = {
     '@stylistic': stylistic
   },
   rules: {
-    ...stylistic.configs['recommended-flat'].rules,
+    ...stylistic.configs.recommended.rules,
     ...love.rules,
     'complexity': 'off', // overkill
     'eqeqeq': ['error', 'smart'],
@@ -24,14 +24,15 @@ const customConfig = {
     'no-negated-condition': 'off', // overkill
     'no-param-reassign': 'off', // this is often necessary in svelte actions
     'no-plusplus': ['error', { allowForLoopAfterthoughts: true }], // allow normal for loops
-    'prefer-named-capture-group': 'off', // do not prefer
-    'prefer-template': 'off', // unnecessary
-    'promise/avoid-new': 'off',
-    'require-atomic-updates': 'off', // doesn't handle variable scoping very well, dangerous to conform to this quickly
-    'require-unicode-regexp': 'off', // good idea but dangerous to conform quickly
+    'no-useless-assignment': 'off', // often done for reactivity
     'no-self-assign': 'off', // self assign in svelte is to trigger reactivity
     'no-unused-vars': 'off',
     'no-use-before-define': 'off',
+    'prefer-named-capture-group': 'off', // do not prefer
+    'prefer-template': 'off', // unnecessary
+    'promise/avoid-new': 'off',
+    'require-atomic-updates': 'off', // buggy, was catching variable resets
+    'require-unicode-regexp': 'off', // v flag breaks downstream vite-plugin-svelte
     'svelte/no-at-html-tags': 'off', // it's already very opt-in, we know it's not safe
     'svelte/no-useless-mustaches': 'off', // might be using the mustache for html escaping
     '@typescript-eslint/array-type': ['error', { default: 'array' }],
@@ -45,6 +46,7 @@ const customConfig = {
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-loop-func': 'off',
     '@typescript-eslint/no-magic-numbers': 'off',
+    '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
     '@typescript-eslint/no-non-null-assertion': 'off', // this is silly, it disallows using ! to mark something as non-null
     '@typescript-eslint/no-redundant-type-constituents': 'off', // breaks generics a lot
     '@typescript-eslint/no-throw-literal': 'off', // sveltekit error() function does not return an Error :/
@@ -63,6 +65,7 @@ const customConfig = {
     '@typescript-eslint/prefer-regexp-exec': 'off', // unhelpful
     '@typescript-eslint/require-await': 'off', // sometimes we make async functions because upstream code expects a promise, even if we don't have any awaits inside
     '@typescript-eslint/strict-boolean-expressions': 'off', // it can be very difficult to assert types in svelte template areas
+    '@typescript-eslint/strict-void-return': 'off', // doesn't accept `void promise` as a way to opt out
     // FORMATTING RULES
     '@stylistic/arrow-parens': ['error', 'as-needed'],
     '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: true }],

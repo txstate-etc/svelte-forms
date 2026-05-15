@@ -82,8 +82,8 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   protected dispatch?: EventDispatcher<Record<string, any>>
 
   constructor (
-    protected submitFn: (data: Partial<StateType>) => Promise<SubmitResponse<StateType>>,
-    protected validateFn?: (data: Partial<StateType>) => Promise<Feedback[]>
+    protected submitFn: (data: StateType) => Promise<SubmitResponse<StateType>>,
+    protected validateFn?: (data: StateType) => Promise<Feedback[]>
   ) {
     super(structuredClone(initialState))
     this.validateVersion = 0
@@ -413,10 +413,10 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     }, 300)
   }
 
-  private prepForSubmit (data: Partial<StateType>) {
+  private prepForSubmit (data: StateType) {
     for (const [path, isEmpty] of this.isEmptyMap.entries()) {
       const v = get(data, path)
-      data = set(data, path, Array.isArray(v) ? v.filter(itm => !isEmpty(itm)) : v)
+      data = set(data as any, path, Array.isArray(v) ? v.filter(itm => !isEmpty(itm)) : v)
     }
     return data
   }

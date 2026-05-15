@@ -33,7 +33,7 @@
   export let serialize: ((value: any) => string) | undefined = undefined
   export let deserialize: ((value: string) => any) | undefined = undefined
   export let initialize: ((value: any) => any) | undefined = undefined
-  export let finalize: ((value: any, isSubmit: boolean) => any) | undefined = undefined
+  export let finalize: ((value: any, isSubmit: boolean | undefined) => any) | undefined = undefined
   export let conditional = true
   export let allowedValues: any[] | undefined = undefined
   export let allowedValuesMultiple = false
@@ -83,9 +83,10 @@
     store.setField(finalPath, v).catch(console.error)
   }
 
-  function onChange (e: any) {
-    if (this?.type === 'checkbox') {
-      setVal(this.checked)
+  function onChange (this: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined, e: any) {
+    if (this instanceof HTMLInputElement && this.type === 'checkbox') {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- certainly does need a type assertion
+      setVal(this.checked as T)
       return
     }
     const resolvedVal = this?.value ?? e.detail
