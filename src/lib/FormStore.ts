@@ -79,6 +79,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   isEmptyMap = new Map<string, (data: any) => boolean>()
   beforeUserChanges?: Partial<StateType>
   autoSave?: boolean
+  preloadAsDraft?: boolean
   protected dispatch?: EventDispatcher<Record<string, any>>
 
   constructor (
@@ -170,11 +171,12 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   setDirtyForm (data: Partial<StateType> = this.value.data) {
-    if (this.autoSave) {
+    if (this.autoSave || this.preloadAsDraft) {
       // normally when we preload or save a form, we assume we are editing an
       // existing object, so we set the whole form dirty and show all errors
-      // but when a user preloads an auto-saving form, it's possible that they
-      // never progressed to the end of the form
+      // but when a user preloads an auto-saving form (or a form whose preload
+      // data is a partial draft), it's possible that they never progressed to
+      // the end of the form
       // we only want to show errors up to the point where they probably stopped
       // working
       // our best guess is going to be that they stopped working at the last field

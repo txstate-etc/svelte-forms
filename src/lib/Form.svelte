@@ -11,6 +11,7 @@
     submit?: (state: T) => Promise<SubmitResponse<T>>
     validate?: (state: T) => Promise<Feedback[]>
     autoSave?: boolean
+    preloadAsDraft?: boolean
     preload?: T
     store?: FormStore<T>
     formelement?: HTMLFormElement
@@ -34,6 +35,7 @@
   export let submit: $$Props['submit'] = undefined
   export let validate: $$Props['validate'] = undefined
   export let autoSave = false
+  export let preloadAsDraft = false
   export let preload: T | undefined = undefined
   export let store = new FormStore<T>(submit!, validate)
   export let formelement: HTMLFormElement | undefined = undefined
@@ -44,8 +46,9 @@
     if (validate) (store as any).validateFn = validate
     if (dispatch) (store as any).dispatch = dispatch
     store.autoSave = autoSave
+    store.preloadAsDraft = preloadAsDraft
   }
-  $: reactToSubmitAndValidate(submit, validate, autoSave, dispatch)
+  $: reactToSubmitAndValidate(submit, validate, autoSave, preloadAsDraft, dispatch)
 
   let firstrun = true
   function reactToPreload (..._: any[]) {
