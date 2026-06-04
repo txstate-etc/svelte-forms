@@ -66,6 +66,17 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   submitVersion: number
   fields: Map<string, number>
   arrayFields = new Map<string, number>()
+  /**
+   * Fields that opt in to owning their subpath messages. When a message has a path
+   * like `myupload.0` and `myupload` is in this set, the message is not considered
+   * global — the owning field is responsible for surfacing it. Used by leaf fields
+   * whose value is itself an array (e.g. multi-file upload) and that already render
+   * per-item feedback. This is deliberately opt-in: AddMore arrays do *not* register
+   * here, because an unregistered subpath under them (e.g. `balloons.0.colour` with
+   * no Field for `colour`) should still surface globally rather than silently
+   * vanish.
+   */
+  ownsSubpathFields = new Set<string>()
   initialized: Set<string>
   initializes: Map<string, (value: any) => any>
   finalizes: Map<string, (value: any, isSubmit?: boolean) => any>
@@ -111,7 +122,14 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       }
       return acc
     }, {})
-    statechanges.messages.global = state.messages.all.filter(m => !m.path || (!this.fields.has(m.path) && !this.arrayFields.has(m.path)))
+    statechanges.messages.global = state.messages.all.filter(m => {
+      if (!m.path) return true
+      if (this.fields.has(m.path) || this.arrayFields.has(m.path)) return false
+      for (const owner of this.ownsSubpathFields) {
+        if (m.path.startsWith(owner + '.')) return false
+      }
+      return true
+    })
     statechanges.validField = validField
     statechanges.valid = !statechanges.invalid
     statechanges.showingInlineErrors = statechanges.messages.global.some(messageIsError) || Object.values(statechanges.messages.fields).some(msgs => msgs.some(messageIsError))
@@ -299,10 +317,11 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     return derivedStore(this, state => (this.dirtyFields.has(path) || this.dirtyForm) ? state.validField[path] : undefined)
   }
 
-  async registerField (path: string, initialValue: any, initialize?: (value: any) => any, finalize?: (value: any, isSubmit: boolean | undefined) => any) {
+  async registerField (path: string, initialValue: any, initialize?: (value: any) => any, finalize?: (value: any, isSubmit: boolean | undefined) => any, ownsSubpaths?: boolean) {
     this.fields.set(path, this.fields.size + this.arrayFields.size)
     if (initialize) this.initializes.set(path, initialize)
     if (finalize) this.finalizes.set(path, finalize)
+    if (ownsSubpaths) this.ownsSubpathFields.add(path)
     if (initialValue != null && !this.preloaded && get(this.value.data, path) == null) {
       const initialized = await initialize?.(initialValue) ?? initialValue
       this.update(v => {
@@ -329,6 +348,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.initialized.delete(path)
     this.finalizes.delete(path)
     this.initializes.delete(path)
+    this.ownsSubpathFields.delete(path)
     for (const [key, idx] of this.fields) {
       if (idx > deletedidx) this.fields.set(key, idx - 1)
     }
@@ -391,6 +411,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.reset()
     this.fields.clear()
     this.arrayFields.clear()
+    this.ownsSubpathFields.clear()
     this.initializes.clear()
     this.finalizes.clear()
     this.isEmptyMap.clear()

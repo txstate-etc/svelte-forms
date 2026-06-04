@@ -37,6 +37,15 @@
   export let conditional = true
   export let allowedValues: any[] | undefined = undefined
   export let allowedValuesMultiple = false
+  /**
+   * When true, this Field claims responsibility for any feedback message whose
+   * path is a subpath of its own (e.g. `myfield.0`, `myfield.0.extra`). Such
+   * messages will not appear in the form's global error list. Use this for leaf
+   * fields whose value is an array and that render per-item feedback themselves
+   * (e.g. a multi-file upload). Do not use this for container arrays like
+   * AddMore, where unhandled subpath messages should still surface globally.
+   */
+  export let ownsSubpaths = false
   /** Only provided for binding, useful for components that wrap Field */
   export let finalSerialize: ((v: any) => string) = () => ''
   /** Only provided for binding, useful for components that wrap Field */
@@ -69,7 +78,7 @@
 
   const store = getContext<FormStore>(FORM_CONTEXT)
   let registered = false
-  const registerFieldPromise = store.registerField(finalPath, defaultValue, initialize, finalize).then(() => { registered = true })
+  const registerFieldPromise = store.registerField(finalPath, defaultValue, initialize, finalize, ownsSubpaths).then(() => { registered = true })
 
   const val = store.getField<T>(finalPath)
   const messages = store.getFeedback(finalPath)
