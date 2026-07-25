@@ -199,11 +199,16 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       // working
       // our best guess is going to be that they stopped working at the last field
       // that has non-empty data in it
+      // note: a boolean `false` is the untouched/default state of a checkbox, not
+      // evidence the user filled anything in, so we treat it as empty here. Without
+      // this, a form of unchecked required checkboxes (e.g. acknowledgements) would
+      // mark itself dirty on preload and show every required error before the user
+      // interacts, since isNotEmpty(false) === true.
       let lastDirtyOrder = -1
       let lastDirtyKey: string | undefined
       for (const [key, order] of this.fields.entries()) {
         const val = get(data, key)
-        if (isNotEmpty(val) && order > lastDirtyOrder) {
+        if (val !== false && isNotEmpty(val) && order > lastDirtyOrder) {
           lastDirtyOrder = order
           lastDirtyKey = key
         }

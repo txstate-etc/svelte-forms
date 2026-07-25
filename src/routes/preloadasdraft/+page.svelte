@@ -11,6 +11,10 @@
     if (!isNotBlank(data.phone)) messages.push({ path: 'phone', message: 'Phone is required.', type: MessageType.ERROR })
     if (!isNotBlank(data.address)) messages.push({ path: 'address', message: 'Address is required.', type: MessageType.ERROR })
     if (!isNotBlank(data.city)) messages.push({ path: 'city', message: 'City is required.', type: MessageType.ERROR })
+    // A required checkbox whose default value is boolean `false`. This exercises the
+    // setDirtyForm boolean-false case: an untouched checkbox must NOT show this error on
+    // first load just because its value is `false`.
+    if (data.agree !== true) messages.push({ path: 'agree', message: 'You must agree.', type: MessageType.ERROR })
     return messages
   }
 
@@ -69,6 +73,14 @@
   <Field path="city" serialize={nullableSerialize} deserialize={nullableDeserialize} let:path let:value let:messages let:onBlur let:onChange>
     <label for={path}>City: </label>
     <input id={path} type="text" name={path} {value} on:input={onChange} on:blur={onBlur}>
+    {#each messages as msg (msg.path, msg.type, msg.message)}<div style="color: red">{msg.message}</div>{/each}
+  </Field>
+  <br>
+  <Field path="agree" defaultValue={false} let:path let:value let:messages let:onBlur let:setVal>
+    <label for={path}>
+      <input id={path} type="checkbox" name={path} checked={value} on:change={e => { setVal(e.currentTarget.checked) }} on:blur={onBlur}>
+      I agree (required) &mdash; not preloaded, defaults to false. Must stay quiet until touched.
+    </label>
     {#each messages as msg (msg.path, msg.type, msg.message)}<div style="color: red">{msg.message}</div>{/each}
   </Field>
   <br>
