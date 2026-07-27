@@ -18,7 +18,12 @@ const customConfig = {
     'complexity': 'off', // overkill
     'eqeqeq': ['error', 'smart'],
     'import/first': 'off',
+    'max-classes-per-file': 'off', // overkill
     'max-depth': 'off', // overkill
+    'max-lines': 'off', // overkill
+    'max-lines-per-function': 'off', // overkill
+    'max-nested-callbacks': 'off', // overkill
+    'max-statements': 'off', // overkill
     'no-console': 'off',
     'no-multiple-empty-lines': 'off',
     'no-negated-condition': 'off', // overkill

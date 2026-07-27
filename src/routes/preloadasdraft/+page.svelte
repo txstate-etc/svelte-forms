@@ -25,9 +25,13 @@
 
   // Simulates partial information gathered from a third-party system: only the
   // email field (halfway down the form) is preloaded. The user is expected to
-  // continue filling out the rest.
+  // continue filling out the rest. `state` is present but still holding the
+  // field's defaultValue (as an autosaved draft would after seeding defaults),
+  // so it must NOT count as where the user left off even though it sits below
+  // email in the field order.
   const preload = {
-    email: 'jane.doe@example.com'
+    email: 'jane.doe@example.com',
+    state: 'TX'
   }
 </script>
 
@@ -72,6 +76,12 @@
   <br>
   <Field path="city" serialize={nullableSerialize} deserialize={nullableDeserialize} let:path let:value let:messages let:onBlur let:onChange>
     <label for={path}>City: </label>
+    <input id={path} type="text" name={path} {value} on:input={onChange} on:blur={onBlur}>
+    {#each messages as msg (msg.path, msg.type, msg.message)}<div style="color: red">{msg.message}</div>{/each}
+  </Field>
+  <br>
+  <Field path="state" defaultValue="TX" serialize={nullableSerialize} deserialize={nullableDeserialize} let:path let:value let:messages let:onBlur let:onChange>
+    <label for={path}>State (preloaded with its own defaultValue, must not count as touched): </label>
     <input id={path} type="text" name={path} {value} on:input={onChange} on:blur={onBlur}>
     {#each messages as msg (msg.path, msg.type, msg.message)}<div style="color: red">{msg.message}</div>{/each}
   </Field>

@@ -1,6 +1,6 @@
 import { derivedStore, Store, subStore } from '@txstate-mws/svelte-store'
 import type { EventDispatcher } from 'svelte'
-import { equal, get, isNotEmpty, set } from 'txstate-utils'
+import { equal, get, isPracticallyEmpty, set } from 'txstate-utils'
 
 export enum MessageType {
   ERROR = 'error',
@@ -53,6 +53,16 @@ export interface FormStoreEvents<StateType> {
 
 const errorTypes: Partial<Record<MessageType, boolean>> = { [MessageType.ERROR]: true, [MessageType.SYSTEM]: true }
 function messageIsError (m: Feedback) { return !!errorTypes[m.type] }
+/**
+ * Equality for deciding whether a field's value represents user activity, i.e.
+ * differs from the field's registered defaultValue. All the empty states (null,
+ * undefined, '', [], {}) are mutually equivalent so a field with no default isn't
+ * considered touched just for holding an empty value. Boolean `false` joins them
+ * because it's the untouched state of a checkbox that never declared a default.
+ * Deliberately NOT the store's own `equal` method, which subclasses may override.
+ */
+function isUnset (v: any) { return v === false || isPracticallyEmpty(v) }
+function equivalentToDefault (val: any, defaultValue: any) { return equal(val, defaultValue) || (isUnset(val) && isUnset(defaultValue)) }
 function setPathValid (validField: Record<string, ValidState>, path: string) {
   validField[path] = 'valid'
   return validField
@@ -66,6 +76,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   submitVersion: number
   fields: Map<string, number>
   arrayFields = new Map<string, number>()
+  defaultValues = new Map<string, any>()
   /**
    * Fields that opt in to owning their subpath messages. When a message has a path
    * like `myupload.0` and `myupload` is in this set, the message is not considered
@@ -198,17 +209,14 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       // we only want to show errors up to the point where they probably stopped
       // working
       // our best guess is going to be that they stopped working at the last field
-      // that has non-empty data in it
-      // note: a boolean `false` is the untouched/default state of a checkbox, not
-      // evidence the user filled anything in, so we treat it as empty here. Without
-      // this, a form of unchecked required checkboxes (e.g. acknowledgements) would
-      // mark itself dirty on preload and show every required error before the user
-      // interacts, since isNotEmpty(false) === true.
+      // whose value differs from its registered defaultValue - a field still
+      // holding its default (including the empty/false states, see
+      // equivalentToDefault) is not evidence the user got that far
       let lastDirtyOrder = -1
       let lastDirtyKey: string | undefined
       for (const [key, order] of this.fields.entries()) {
         const val = get(data, key)
-        if (val !== false && isNotEmpty(val) && order > lastDirtyOrder) {
+        if (!equivalentToDefault(val, this.defaultValues.get(key)) && order > lastDirtyOrder) {
           lastDirtyOrder = order
           lastDirtyKey = key
         }
@@ -323,31 +331,41 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   }
 
   async registerField (path: string, initialValue: any, initialize?: (value: any) => any, finalize?: (value: any, isSubmit: boolean | undefined) => any, ownsSubpaths?: boolean) {
+    // push the entire registration onto registerPromises so preload's timer waits for
+    // registrations to fully settle, initialized defaults included, before setDirtyForm
+    const registerPromise = this.registerFieldInternal(path, initialValue, initialize, finalize, ownsSubpaths)
+    this.registerPromises.push(registerPromise)
+    await registerPromise
+  }
+
+  protected async registerFieldInternal (path: string, initialValue: any, initialize?: (value: any) => any, finalize?: (value: any, isSubmit: boolean | undefined) => any, ownsSubpaths?: boolean) {
     this.fields.set(path, this.fields.size + this.arrayFields.size)
     if (initialize) this.initializes.set(path, initialize)
     if (finalize) this.finalizes.set(path, finalize)
     if (ownsSubpaths) this.ownsSubpathFields.add(path)
+    // record the default in the same shape `data` holds values - through `initialize`
+    // when one is provided - so setDirtyForm compares like with like
+    const initializedDefault = initialize && initialValue != null ? await initialize(initialValue) ?? initialValue : initialValue
+    this.defaultValues.set(path, initializedDefault)
     if (initialValue != null && !this.preloaded && get(this.value.data, path) == null) {
-      const initialized = await initialize?.(initialValue) ?? initialValue
       this.update(v => {
-        if (initialized != null && !this.preloaded && get(v.data, path) == null) {
+        if (initializedDefault != null && !this.preloaded && get(v.data, path) == null) {
           this.initialized.add(path)
-          return { ...v, data: set(v.data, path, initialized) }
+          return { ...v, data: set(v.data, path, initializedDefault) }
         }
         return v
       })
     } else if (this.preloaded && initialize && !this.initialized.has(path)) {
-      const setFieldPromise = this.setField(path, get(this.value.data, path), { initialize: true, notDirty: true })
-      this.registerPromises.push(setFieldPromise)
-      await setFieldPromise
+      await this.setField(path, get(this.value.data, path), { initialize: true, notDirty: true })
     }
-    this.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [path]: { value: get(v.data, path) ?? initialValue } } }))
+    this.update(v => ({ ...v, conditionalData: { ...v.conditionalData, [path]: { value: get(v.data, path) ?? initializedDefault } } }))
   }
 
   unregisterField (path: string) {
     const deletedidx = this.fields.get(path)
     if (deletedidx == null) return
     this.fields.delete(path)
+    this.defaultValues.delete(path)
     this.dirtyFields.delete(path)
     this.dirtyFieldsNextTick.delete(path)
     this.initialized.delete(path)
