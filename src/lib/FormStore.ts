@@ -68,6 +68,11 @@ function setPathValid (validField: Record<string, ValidState>, path: string) {
   return validField
 }
 
+interface TrailingSubmit<StateType> {
+  autoSave: boolean
+  promise: Promise<SubmitResponse<StateType>>
+}
+
 const initialState = { data: {}, conditionalData: {}, messages: { all: [], global: [], fields: {} }, validField: {}, valid: true, invalid: false, showingInlineErrors: false, initializing: false, validating: false, submitting: false, saved: false, dirty: undefined, width: 800, hasUnsavedChanges: false }
 export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   validationTimer?: ReturnType<typeof setTimeout>
@@ -96,6 +101,8 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   dirtyForm = false
   preloaded = false
   submitPromise?: Promise<SubmitResponse<StateType>>
+  trailingSubmit?: TrailingSubmit<StateType>
+  changedSinceSubmit = false
   mounted?: boolean
   needsValidation?: boolean
   isEmptyMap = new Map<string, (data: any) => boolean>()
@@ -166,6 +173,8 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.dirtyFields = new Set()
     this.dirtyFieldsNextTick = new Set()
     this.beforeUserChanges = undefined
+    this.changedSinceSubmit = false
+    this.trailingSubmit = undefined
     clearTimeout(this.validationTimer)
     clearTimeout(this.preloadTimer)
     this.set(structuredClone(initialState))
@@ -241,7 +250,10 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       return { ...v, data: set(v.data, path, val) }
     })
     if (wasDifferent) {
-      if (!opts?.notDirty) this.dirtyField(path)
+      if (!opts?.notDirty) {
+        this.dirtyField(path)
+        this.changedSinceSubmit = true
+      }
       this.triggerValidation()
     }
     return wasDifferent
@@ -289,6 +301,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       const arr = get(v.data, path)
       return { ...v, data: set(v.data, path, [...(Array.isArray(arr) ? arr : []), initialState]) }
     })
+    this.changedSinceSubmit = true
     this.triggerValidation()
   }
 
@@ -300,6 +313,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       newArr.splice(idx, 1)
       return { ...v, data: set(v.data, path, newArr) }
     })
+    this.changedSinceSubmit = true
     this.triggerValidation()
   }
 
@@ -312,6 +326,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       arr[idx] = swap
       return { ...v, data: set(v.data, path, arr) }
     })
+    this.changedSinceSubmit = true
     this.triggerValidation()
   }
 
@@ -495,7 +510,46 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     return data
   }
 
-  async submit (opts?: { autoSave?: boolean }) {
+  async submit (opts?: { autoSave?: boolean }): Promise<SubmitResponse<StateType>> {
+    // If a submit is already in flight, we do not want two mutations racing, but we
+    // also must not pretend the caller's data was saved - the form may have changed
+    // since the in-flight request captured its payload. So we queue exactly one
+    // trailing resubmit that runs as soon as the in-flight submit settles, capturing
+    // whatever the form state is at that moment. Any number of submit calls arriving
+    // during the same in-flight submit share that single trailing resubmit.
+    if (this.submitPromise != null) {
+      if (this.trailingSubmit != null) {
+        // a manual submission takes precedence over autosave for the trailing run
+        this.trailingSubmit.autoSave &&= opts?.autoSave ?? false
+        return await this.trailingSubmit.promise
+      }
+      const trailing: TrailingSubmit<StateType> = {
+        autoSave: opts?.autoSave ?? false,
+        promise: this.submitPromise.then(async resp => {
+          if (this.trailingSubmit !== trailing) return resp // reset() cancelled us
+          this.trailingSubmit = undefined
+          // only resubmit if the user altered the form while the last request was in
+          // flight and those changes remain unsaved - a double-fired submit with
+          // nothing new to say should not repeat the mutation
+          if (!this.changedSinceSubmit || !this.value.hasUnsavedChanges) {
+            this.update(v => ({ ...v, submitting: false }))
+            return resp
+          }
+          return await this.submit({ autoSave: trailing.autoSave })
+        })
+      }
+      this.trailingSubmit = trailing
+      return await trailing.promise
+    }
+    this.submitPromise = this.performSubmit(opts)
+    try {
+      return await this.submitPromise
+    } finally {
+      this.submitPromise = undefined
+    }
+  }
+
+  protected async performSubmit (opts?: { autoSave?: boolean }): Promise<SubmitResponse<StateType>> {
     try {
       clearTimeout(this.validationTimer)
       this.submitVersion += 1
@@ -503,10 +557,10 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
       this.validateVersion += 1
       this.update(v => ({ ...v, submitting: true }))
       const saveData = this.value.data
+      this.changedSinceSubmit = false
       const data = await this.finalize(saveData, true)
       const dataToSubmit = this.prepForSubmit(data)
-      this.submitPromise ??= this.submitFn(dataToSubmit)
-      const resp = await this.submitPromise
+      const resp = await this.submitFn(dataToSubmit)
       if (saveVersion === this.submitVersion) {
         // if this is a regular submission -> dirty the whole form, even if it's an autoSave form
         if (!opts?.autoSave) this.dirtyForm = true
@@ -534,8 +588,8 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
         messages
       }
     } finally {
-      this.submitPromise = undefined
-      this.update(v => ({ ...v, submitting: false }))
+      // keep `submitting` true when a trailing resubmit is queued so the UI does not flicker
+      this.update(v => ({ ...v, submitting: this.trailingSubmit != null }))
     }
   }
 }
