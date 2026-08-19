@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "main": "./dist/index.js",
   "exports": {
@@ -35,8 +36,10 @@
     "@types/node": "^25.8.0",
     "eslint-config-love": "^154.0.0",
     "eslint-plugin-svelte": "^3.0.0",
+    "jsdom": "^30.0.1",
     "svelte-check": "^4.0.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11"
   },
   "peerDependencies": {
     "svelte": "^3.53.1 || ^4.0.0 || ^5.0.0"
