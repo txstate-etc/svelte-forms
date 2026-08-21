@@ -103,6 +103,14 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
   submitPromise?: Promise<SubmitResponse<StateType>>
   trailingSubmit?: TrailingSubmit<StateType>
   changedSinceSubmit = false
+  /**
+   * A successful autosave that landed while the form held newer input holds its
+   * `autosaved` announcement here instead of dispatching. Usually the follow-up save
+   * dispatches its own event and this is simply discarded; if the burst ends without
+   * one (the trailing resubmit skipped, or a later attempt failed), we flush it so
+   * every committed save is eventually announced.
+   */
+  pendingAutosavedDispatch?: { data: any }
   mounted?: boolean
   needsValidation?: boolean
   isEmptyMap = new Map<string, (data: any) => boolean>()
@@ -175,6 +183,7 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     this.beforeUserChanges = undefined
     this.changedSinceSubmit = false
     this.trailingSubmit = undefined
+    this.pendingAutosavedDispatch = undefined
     clearTimeout(this.validationTimer)
     clearTimeout(this.preloadTimer)
     this.set(structuredClone(initialState))
@@ -533,6 +542,9 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
           // nothing new to say should not repeat the mutation
           if (!this.changedSinceSubmit || !this.value.hasUnsavedChanges) {
             this.update(v => ({ ...v, submitting: false }))
+            // the skipped resubmit will not dispatch anything, so the in-flight save's
+            // suppressed announcement must fire now or it never would
+            this.flushPendingAutosavedDispatch()
             return resp
           }
           return await this.submit({ autoSave: trailing.autoSave })
@@ -547,6 +559,13 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
     } finally {
       this.submitPromise = undefined
     }
+  }
+
+  protected flushPendingAutosavedDispatch () {
+    if (this.pendingAutosavedDispatch == null) return
+    const { data } = this.pendingAutosavedDispatch
+    this.pendingAutosavedDispatch = undefined
+    this.dispatch?.('autosaved', data)
   }
 
   protected async performSubmit (opts?: { autoSave?: boolean }): Promise<SubmitResponse<StateType>> {
@@ -571,9 +590,23 @@ export class FormStore<StateType = any> extends Store<IFormStore<StateType>> {
           if (!opts?.autoSave) {
             if (resp.data != null) await this.preload(resp.data)
             clearTimeout(this.validationTimer)
+            this.pendingAutosavedDispatch = undefined
+            this.dispatch?.('saved', resp.data ?? dataToSubmit)
+          } else if (this.trailingSubmit == null && !this.changedSinceSubmit) {
+            this.pendingAutosavedDispatch = undefined
+            this.dispatch?.('autosaved', resp.data ?? dataToSubmit)
+          } else {
+            // this save succeeded but the form already holds newer input. Announcing now
+            // would claim the user's work is saved while keystrokes are still unsaved, and a
+            // consumer that refreshes server data on the event would fetch a snapshot this
+            // burst is about to supersede - if that snapshot arrives after the follow-up save
+            // lands, it can revert the form to stale data. Hold the announcement instead;
+            // the follow-up save dispatches its own event or flushes this one.
+            this.pendingAutosavedDispatch = { data: resp.data ?? dataToSubmit }
           }
-          this.dispatch?.(opts?.autoSave ? 'autosaved' : 'saved', resp.data ?? dataToSubmit)
         } else if (!opts?.autoSave) this.dispatch?.('validationfail', resp.messages)
+        // an earlier save in this burst did commit; announce it even though the latest attempt failed
+        else this.flushPendingAutosavedDispatch()
       }
       return { ...resp, data: resp.data ?? dataToSubmit }
     } catch (e: any) {
